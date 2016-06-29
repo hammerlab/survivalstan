@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 
-def fit_stan_survival_model(df, formula, event_col,
+def fit_stan_survival_model(df, formula, event_col, model_code,
 							 model_cohort = 'survival model', 
                              time_col = None,
                              sample_id_col = None, sample_col = None,
