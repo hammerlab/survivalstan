@@ -41,7 +41,7 @@ def test_pem_model():
 		model_code = stanmodels.stan.pem_survival_model,
 		df = dlong,
 		sample_col = 'index',
-		timepoint_col = 'end_time',
+		timepoint_end_col = 'end_time',
 		event_col = 'end_failure',
 		formula = 'age + sex',
 		iter = 3000,
