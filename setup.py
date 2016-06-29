@@ -1,5 +1,5 @@
-from setuptools import setup, find_packages
 from __future__ import print_function
+from setuptools import setup, find_packages
 from codecs import open
 from os import path
 import versioneer
@@ -18,22 +18,6 @@ with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
 
 install_requires = [x.strip() for x in all_reqs if 'git+' not in x]
 dependency_links = [x.strip().replace('git+', '') for x in all_reqs if 'git+' not in x]
-
-readme = ""
-try:
-    with open(readme_path, "r") as f:
-        readme = f.read()
-except IOError as e:
-    print(e)
-    print("Failed to open %s" % readme_path)
-
-try:
-    import pypandoc
-    readme = pypandoc.convert(readme, to="rst", format="md")
-except ImportError as e:
-    print(e)
-    print("Failed to convert %s to reStructuredText", readme_filename)
-    pass
 
 setup(
     name='stanmodels',
