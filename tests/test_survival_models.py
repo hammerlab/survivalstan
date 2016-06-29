@@ -1,6 +1,7 @@
 
 import statsmodels
 import stanmodels
+from nose.tools import ok_
 
 def load_test_dataset():
 	''' Load test dataset from R survival package
@@ -25,6 +26,9 @@ def test_weibull_model():
 		chains = 4,
 		make_inits = stanmodels.make_weibull_survival_model_inits
 		)
+	ok_('fit' in testfit)
+	ok_('coefs' in testfit)
+	ok_('loo' in testfit)
 	return(testfit)
 
 def test_pem_model():
@@ -43,5 +47,8 @@ def test_pem_model():
 		iter = 3000,
 		chains = 4,
 		)
+	ok_('fit' in testfit)
+	ok_('coefs' in testfit)
+	ok_('loo' in testfit)
 	return(testfit)
 
