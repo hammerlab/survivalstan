@@ -1,0 +1,7 @@
+# Dev/Deployment
+sphinx
+sphinx_rtd_theme
+coverage
+pypi-publisher
+nose>=1.3.3
+pylint>=1.4.4

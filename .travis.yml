@@ -1,0 +1,48 @@
+sudo: false  # Use container-based infrastructure
+language: python
+python:
+  - "2.7"
+  - "3.4"
+before_install:
+  # Commands below copied from: http://conda.pydata.org/docs/travis.html
+  # We do this conditionally because it saves us some downloading if the
+  # version is the same.
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  # reset the shell's lookup table for program name to path mappings
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+addons:
+  apt:
+    packages:
+    # install pandoc for use with pypandoc for converting the README
+    # from markdown to RST
+    - pandoc
+install:
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy nose pandas matplotlib
+  - source activate test-environment
+  - pip install pypandoc
+  - pip install -r requirements.txt
+  - pip install .
+  - pip install coveralls
+script:
+  - pyensembl install --release 75 --species human
+  - nosetests test --with-coverage --cover-package=stanmodels && ./lint.sh
+after_success:
+  coveralls
+deploy:
+  provider: pypi
+  user: hammerlab
+  password:
+    secure: "w+hnWrLGBQWig50bPJ18VCWfwEjxFOgoNVmweGQFGr4IWISegGBZxfHcf/bOQ403DNooiobwiE3DCu3KpgEaxABtZRTcYdIZqpK6XxXkrMEJEhnBHMz8XpU7izcbXlQAMTTVnhyGrQuxQXhl90YrqBjwHFZ2Y/89Nj69BDoYQDCDhfzlrbOevcrkMEzqPvINO2SEWk2UfIyQGxlvJDlAPbeDMr4v/oIQCrr9tzJySlSfPcaik6wt3Af9Hj9/QgecRf/ovkuc2R0v6OI2LfE1UAiKorn1V59GeCa3wr5a3qwotY2SUr5TWMnUOWwkgNA/I16k2AHSHkZPIhIGU3R+n1hbF7VkSiQEjgwuEFsfCO+1OgJqgmxISUEXHAS8zt54BxFP66n2wtx3spKppLPE6bCDKM1Q1MnV7x+VJBS75Xtr3EG7R/q/TOtA5faLIhF8sHMqENP9QemB1xK74D9/EOaPdUhnXqET/zRqTpmeS/87LdnYqVUy1lzv5PhxaCM7x/2q2/9WxV4bDMwG/vxIMdvD2YxqBIqczwav/ylGukNKO99qhwIlCcaSUQAInBrpZ/WYqEv8TKu9h/ynUXika3V9h/gJXt9HNQUMu5XOqQMjHTlNvo862/NHGHyZhBevDo4662NZtDrq96pcUIG6jlqmTPiUbBjvk6J6VQGc6xU="
+  on:
+    branch: master
+    tags: true
