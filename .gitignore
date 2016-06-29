@@ -47,3 +47,6 @@ venv
 cache
 ENV.sh
 generated/
+
+## sublime temp file
+.DS_Store
