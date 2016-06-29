@@ -38,7 +38,7 @@ setup(
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
     keywords='',
-    packages=find_packages(exclude=['docs', 'tests*']),
+    packages=find_packages(exclude=['docs', 'test*']),
     include_package_data=True,
     author='Jacki Novik',
     install_requires=install_requires,
