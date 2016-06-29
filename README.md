@@ -1,7 +1,6 @@
 Stan Models
 ===============================
 
-version number: 0.0.1
 author: Jacki Novik
 
 Overview
