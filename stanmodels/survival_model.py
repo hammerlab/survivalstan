@@ -4,13 +4,6 @@ import stanity
 import pandas as pd
 import numpy as np
 
-import pkg_resources, os
-
-resource_package = __name__  ## Could be any module/package name.
-pem_survival_path = os.path.join('stan', 'pem_survival_model.stan')
-weibull_survival_path = os.path.join('stan', 'weibull_survival_model.stan')
-pem_survival_model = pkg_resources.resource_string(resource_package, pem_survival_path)
-weibull_survival_model = pkg_resources.resource_string(resource_package, weibull_survival_path)
 
 def fit_stan_survival_model(df, formula, event_col,
 							 model_cohort = 'survival model', 
@@ -58,7 +51,7 @@ def fit_stan_survival_model(df, formula, event_col,
 	Example:
 
     >>> testfit = fit_stan_survival_model(
-			    model_file = stanmodels.survival_models.pem_survival_model,
+			    model_file = stanmodels.stan.pem_survival_model,
 			    formula = '~ met_status + pd_l1',
 			    df = dflong,
 			    sample_col = 'patient_id',
