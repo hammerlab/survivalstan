@@ -26,7 +26,7 @@ setup(
     description='Library of Stan Models for Computational Biology',
     long_description=long_description,
     url='https://github.com/jburos/stanmodels',
-    download_url='https://github.com/jburos/stanmodels/tarball/' + __version__,
+    download_url='https://github.com/jburos/stanmodels/tarball/' + versioneer.get_version(),
     license="http://www.apache.org/licenses/LICENSE-2.0.html",
     classifiers=[
         "Development Status :: 3 - Alpha",
