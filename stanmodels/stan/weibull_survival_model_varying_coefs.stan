@@ -26,7 +26,7 @@ data {
   matrix[N, M] x;             // predictors for observation n
   vector[N] y;                // time for observation n
   vector[N] event;            // event status (1:event, 0:censor) for obs n
-  int<lower=0, upper=G> grp[N]; // group indicator for observation n
+  int<lower=0, upper=G> g[N]; // group indicator for observation n
 }
 transformed data {
   real<lower=0> tau_mu;
@@ -51,12 +51,12 @@ transformed parameters {
   real alpha;
   vector[N] lp;
 
-  for (g in 1:G) {
-    grp_beta[,g] <- bg_prior_lp(tau_s_raw, tau_raw) .* grp_beta_raw[,g];
+  for (grp in 1:G) {
+    grp_beta[,grp] <- bg_prior_lp(tau_s_raw, tau_raw) .* grp_beta_raw[,grp];
   }
   alpha <- exp(tau_al * alpha_raw);
   for (n in 1:N) {
-    lp[n] <- mu[grp[n]] + dot_product(x[n], grp_beta[,grp[n]]);
+    lp[n] <- mu[g[n]] + dot_product(x[n], grp_beta[,g[n]]);
   }
 }
 model {
@@ -64,9 +64,9 @@ model {
   alpha_raw ~ normal(0.0, 1.0);
   beta ~ normal(0.0, 1.0);
   beta_sigma ~ cauchy(0, 1);
-  for (g in 1:G) {
-      grp_beta_raw[,g] ~ normal(beta, beta_sigma);
-      mu[g] ~ normal(0.0, tau_mu);
+  for (grp in 1:G) {
+      grp_beta_raw[,grp] ~ normal(beta, beta_sigma);
+      mu[grp] ~ normal(0.0, tau_mu);
   }
   
   // likelihood

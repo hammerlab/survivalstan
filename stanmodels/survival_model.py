@@ -6,10 +6,10 @@ import numpy as np
 
 
 def fit_stan_survival_model(df, formula, event_col, model_code,
-							 model_cohort = 'survival model', 
+							               model_cohort = 'survival model', 
                              time_col = None,
                              sample_id_col = None, sample_col = None,
-                             grp_id_col = None, grp_col = None,
+                             group_id_col = None, group_col = None,
                              timepoint_id_col = None, timepoint_end_col = None,
                              make_inits = None,
                              *args, **kwargs):
@@ -26,8 +26,8 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
        time_col (chr): name of column containing event time -- used for parameteric (Weibull) model
        sample_id_col (chr): name of column containing numeric sample ids (1-indexed & sequential)
        sample_col (chr): name of column containing sample descriptions - will be converted to an ID
-       grp_id_col (chr): name of column containing numeric group ids (1-indexed & sequential)
-       grp_col (chr): name of column containing group descriptions - will be converted to an ID 
+       group_id_col (chr): name of column containing numeric group ids (1-indexed & sequential)
+       group_col (chr): name of column containing group descriptions - will be converted to an ID 
        timepoint_id_col (chr): name of column containing timepoint ids (1-indexed & sequential)
        timepoint_end_col (chr): name of column containing end times for each timepoint (will be converted to an ID)
 
@@ -77,7 +77,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
     ## limit to non-missing data 
     ## (if necessary) transform columns to ids
     other_cols = [event_col, time_col,
-                  grp_id_col, grp_col,
+                  group_id_col, group_col,
                   timepoint_id_col, timepoint_end_col,
                   sample_id_col, sample_col] ## list of possible columns to keep
     
@@ -99,9 +99,9 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
         sample_id_col = 'sample_id'
         df_nonmiss[sample_id_col] = df_nonmiss[sample_col].astype('category').cat.codes + 1
         
-    if grp_col and not(grp_id_col):
-        grp_id_col = 'grp_id'
-        df_nonmiss[grp_id_col] = df_nonmiss[grp_col].astype('category').cat.codes + 1
+    if group_col and not(group_id_col):
+        group_id_col = 'group_id'
+        df_nonmiss[group_id_col] = df_nonmiss[group_col].astype('category').cat.codes + 1
 
     survival_model_input_data = {
         'N': len(df_nonmiss.index),
@@ -113,9 +113,9 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
     if time_col:
         survival_model_input_data['y'] = df_nonmiss[time_col].values
 
-    if grp_id_col:
-        survival_model_input_data['g'] = df_nonmiss[grp_id_col].values.astype(int)
-        survival_model_input_data['G'] = len(df_nonmiss[grp_id_col].unique())
+    if group_id_col:
+        survival_model_input_data['g'] = df_nonmiss[group_id_col].values.astype(int)
+        survival_model_input_data['G'] = len(df_nonmiss[group_id_col].unique())
     
     if sample_id_col:
         survival_model_input_data['s'] = df_nonmiss[sample_id_col].values.astype(int)

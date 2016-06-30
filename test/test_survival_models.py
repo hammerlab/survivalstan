@@ -53,7 +53,7 @@ def test_pem_model():
 	return(testfit)
 
 def test_pem_varcoef_model():
-	''' Test Weibull survival model on test dataset
+	''' Test varying-coef PEM survival model on test dataset
 	'''
 	d = load_test_dataset()
 	dlong = stanmodels.prep_data_long_surv(d, time_col = 'futime', event_col = 'death')
