@@ -6,7 +6,7 @@ import numpy as np
 
 
 def fit_stan_survival_model(df, formula, event_col, model_code,
-							               model_cohort = 'survival model', 
+                                           model_cohort = 'survival model', 
                              time_col = None,
                              sample_id_col = None, sample_col = None,
                              group_id_col = None, group_col = None,
@@ -48,21 +48,21 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
 
     Generic helper function for fitting variety of survival models using Stan.
 
-	Example:
+    Example:
 
     >>> testfit = fit_stan_survival_model(
-			    model_file = stanmodels.stan.pem_survival_model,
-			    formula = '~ met_status + pd_l1',
-			    df = dflong,
-			    sample_col = 'patient_id',
-			    timepoint_end_col = 'end_time',
-			    event_col = 'end_failure',
-			    model_cohort = 'PEM survival model',
-			    iter = 30000,
-			    chains = 4,
-			)
-	>>> print(testfit['fit'])
-	>>> seaborn.boxplot(x = 'value', y = 'variable', data = testfit['coefs'])
+                model_file = stanmodels.stan.pem_survival_model,
+                formula = '~ met_status + pd_l1',
+                df = dflong,
+                sample_col = 'patient_id',
+                timepoint_end_col = 'end_time',
+                event_col = 'end_failure',
+                model_cohort = 'PEM survival model',
+                iter = 30000,
+                chains = 4,
+            )
+    >>> print(testfit['fit'])
+    >>> seaborn.boxplot(x = 'value', y = 'variable', data = testfit['coefs'])
 
     """
 
@@ -145,6 +145,27 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
     beta_coefs = pd.melt(beta_coefs)
     beta_coefs['model_cohort'] = model_cohort
     
+    ## prep by-group coefs if group specified
+    if group_id_col:
+        if group_col:
+            grp_names = df_nonmiss.loc[~df_nonmiss[[group_id_col]].duplicated()].sort_values(group_id_col)[group_col].values
+        else:
+            grp_names = df_nonmiss.loc[~df_nonmiss[[group_id_col]].duplicated()].sort_values(group_id_col)[group_id_col].values
+        grp_coefs_extract = survival_fit.extract()['grp_beta']
+        grp_coefs_data = list()
+        i = 0
+        for grp in grp_names:
+            grp_data = pd.DataFrame(grp_coefs_extract[:,:,i], columns = x_df.columns)
+            grp_data['group'] = grp 
+            grp_coefs_data.append(grp_data)
+            i = i+1
+        grp_coefs_data = pd.concat(grp_coefs_data)
+        grp_coefs = pd.melt(grp_coefs_data, id_vars = 'group')
+        grp_coefs['model_cohort'] = model_cohort
+    else:
+        grp_coefs = beta_coefs
+        grp_coefs['group'] = 'Overall'
+
     loo = stanity.psisloo(survival_fit.extract()['log_lik'])
     
     return {
@@ -154,6 +175,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
         'data': survival_model_input_data,
         'fit': survival_fit,
         'coefs': beta_coefs,
+        'grp_coefs': grp_coefs,
         'loo': loo,
         'model_cohort': model_cohort,
     }
