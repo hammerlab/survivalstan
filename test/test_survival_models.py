@@ -64,8 +64,8 @@ def test_pem_varcoef_model():
 		sample_col = 'index',
 		timepoint_end_col = 'end_time',
 		event_col = 'end_failure',
-		group_col = 'sex',
-		formula = 'age',
+		group_col = 'chapter',
+		formula = 'age + sex',
 		iter = 3000,
 		chains = 4,
 		)
