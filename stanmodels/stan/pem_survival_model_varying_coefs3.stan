@@ -64,12 +64,15 @@ transformed data {
   }
 }
 parameters {
-  real<lower=0> baseline_sigma0;       // overall hyperprior for baseline sigma
-  real<lower=0> baseline_sigma_sigma;  // overall hyperprior for baseline sigma variance
-  vector[T] baseline;         // unstructured baseline hazard for each timepoint t
-  vector<lower=0>[T] baseline_sigma;   // variance for unstructured baseline hazard
-  matrix<lower=0>[T, G] grp_baseline;  // group-level unstructured baseline hazard for each timepoint t
-  vector[G-1] grp_mu;         // group-level difference in baseline hazard (from group 1, across all timepoints)
+  real<lower=0> baseline_sigma;            // hyperprior for baseline sigma change from previous timepoint
+  vector<lower=0>[T] baseline;             // unstructured baseline hazard for each timepoint t
+
+  real<lower=0> grp_baseline_sigma_loc;    // hyperprior for within-timepoint variance across groups
+  real<lower=0> grp_baseline_sigma_sigma;  // hyperprior for within-timepoint variance across groups
+  vector<lower=0>[T] grp_baseline_sigma;   // variance for unstructured baseline hazard
+  matrix<lower=0>[T, G] grp_baseline;      // group-level unstructured baseline hazard for each timepoint t
+  vector[G-1] grp_mu;          // group-level difference in baseline hazard (from group 1, across all timepoints)
+  
   vector[M] beta;              // overall beta for each covariate
   vector[M] beta_sigma;        // variance for each covariate
   matrix[M, G] grp_beta;       // group-level beta for each covariate
@@ -78,23 +81,30 @@ transformed parameters {
   vector<lower=0>[N] hazard;
   
   for (n in 1:N) {
-    hazard[n] <- exp(x[n,]*grp_beta[,g[n]])*grp_baseline[t[n],g[n]];
+    hazard[n] <- exp(x[n,]*grp_beta[,g[n]] + t_dur[t[n]])*grp_baseline[t[n],g[n]];
   }
 }
 model {
-  // priors on baseline hazard
-  baseline_sigma0 ~ cauchy(0, 1);
-  baseline_sigma_sigma ~ normal(0, 0.1);
+
+  // priors on baseline hazard (average across groups)
+  baseline_sigma ~ cauchy(0, 1);
+  baseline[1] ~ normal(0, 1);
+  for (i in 2:T) {
+    baseline[i] ~ normal(baseline[i-1], baseline_sigma);
+  }
+
+  // priors on per-group baseline hazard
   grp_mu ~ normal(0, 1);
+  grp_baseline_sigma_loc ~ normal(0, 1);
+  grp_baseline_sigma_sigma ~ cauchy(0, 1);
   for (i in 1:T) {
-      baseline[i] ~ gamma(r * t_dur[i] * c, c);
-      baseline_sigma[i] ~ normal(baseline_sigma0, baseline_sigma_sigma);
+      grp_baseline_sigma[i] ~ normal(grp_baseline_sigma_loc, grp_baseline_sigma_sigma);
       for (grp in 1:G) {
         if (grp == 1) {
-          grp_baseline[i,grp] ~ normal(baseline[i], baseline_sigma[i]);
+          grp_baseline[i,grp] ~ normal(baseline[i], grp_baseline_sigma[i]);
         }
         else {
-          grp_baseline[i,grp] ~ normal(baseline[i] + grp_mu[grp-1], baseline_sigma[i]);
+          grp_baseline[i,grp] ~ normal(baseline[i] + grp_mu[grp-1], grp_baseline_sigma[i]);
         }
       }
   }
