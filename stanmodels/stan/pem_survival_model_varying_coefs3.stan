@@ -75,7 +75,7 @@ parameters {
   vector[G-1] grp_mu_raw;          // group-level difference in baseline hazard (from group 1, across all timepoints)
 
   vector[M] beta;              // overall beta for each covariate
-  vector[M] beta_sigma;        // variance for each covariate
+  vector<lower=0>[M] beta_sigma;        // variance for each covariate
   matrix[M, G] grp_beta;       // group-level beta for each covariate
 }
 transformed parameters {
