@@ -198,7 +198,7 @@ def extract_grp_baseline_hazard(results, timepoint_id_col = 'timepoint_id', time
         i = i+1
     grp_baseline_coefs = pd.concat(grp_baseline_data)
     end_times = _extract_timepoint_end_times(results, timepoint_id_col = timepoint_id_col, timepoint_end_col = timepoint_end_col)
-    bs_data = grp_baseline_coefs.join(end_times, by = timepoint_id_col) 
+    bs_data = pd.merge(grp_baseline_coefs, end_times, on = timepoint_id_col) 
     return(bs_data)
 
 def _extract_timepoint_end_times(results, timepoint_end_col = 'end_time', timepoint_id_col = 'timepoint_id'):
@@ -214,7 +214,7 @@ def extract_baseline_hazard(results, timepoint_id_col = 'timepoint_id', timepoin
     baseline_coefs = pd.DataFrame(baseline_extract)
     bs_coefs = pd.melt(baseline_coefs, var_name = timepoint_id_col, value_name = 'baseline_hazard')
     end_times = _extract_timepoint_end_times(results, timepoint_id_col = timepoint_id_col, timepoint_end_col = timepoint_end_col)
-    bs_data = bs_coefs.join(end_times, by = timepoint_id_col) 
+    bs_data = pd.merge(bs_coefs, end_times, on = timepoint_id_col) 
     return(bs_data)
 
 ## convert wide survival data to long format
