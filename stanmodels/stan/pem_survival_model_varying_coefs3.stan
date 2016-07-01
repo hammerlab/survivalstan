@@ -67,12 +67,12 @@ parameters {
   real<lower=0> baseline_sigma;            // hyperprior for baseline sigma change from previous timepoint
   vector<lower=0>[T] baseline;             // unstructured baseline hazard for each timepoint t
 
-  real<lower=0> grp_baseline_sigma_loc;    // hyperprior for within-timepoint variance across groups
-  real<lower=0> grp_baseline_sigma_sigma;  // hyperprior for within-timepoint variance across groups
-  vector<lower=0>[T] grp_baseline_sigma;   // variance for unstructured baseline hazard
-  matrix<lower=0>[T, G] grp_baseline;      // group-level unstructured baseline hazard for each timepoint t
-  vector[G-1] grp_mu;          // group-level difference in baseline hazard (from group 1, across all timepoints)
-  
+  //real<lower=0> grp_baseline_sigma_loc;    // hyperprior for within-timepoint variance across groups
+  //real<lower=0> grp_baseline_sigma_sigma;  // hyperprior for within-timepoint variance across groups
+  //vector<lower=0>[T] grp_baseline_sigma;   // variance for unstructured baseline hazard
+  //matrix<lower=0>[T, G] grp_baseline;      // group-level unstructured baseline hazard for each timepoint t
+  //vector[G-1] grp_mu;          // group-level difference in baseline hazard (from group 1, across all timepoints)
+
   vector[M] beta;              // overall beta for each covariate
   vector[M] beta_sigma;        // variance for each covariate
   matrix[M, G] grp_beta;       // group-level beta for each covariate
@@ -81,7 +81,7 @@ transformed parameters {
   vector<lower=0>[N] hazard;
   
   for (n in 1:N) {
-    hazard[n] <- exp(x[n,]*grp_beta[,g[n]] + t_dur[t[n]])*grp_baseline[t[n],g[n]];
+    hazard[n] <- exp(x[n,]*grp_beta[,g[n]])*baseline[t[n]]*t_dur[t[n]];
   }
 }
 model {
@@ -93,6 +93,7 @@ model {
     baseline[i] ~ normal(baseline[i-1], baseline_sigma);
   }
 
+  /*
   // priors on per-group baseline hazard
   grp_mu ~ normal(0, 1);
   grp_baseline_sigma_loc ~ normal(0, 1);
@@ -108,6 +109,7 @@ model {
         }
       }
   }
+  */
 
   // priors on beta coefficients
   beta ~ cauchy(0, 2);
