@@ -72,7 +72,7 @@ parameters {
   //real<lower=0> grp_baseline_sigma_sigma;  // hyperprior for within-timepoint variance across groups
   //vector<lower=0>[T] grp_baseline_sigma;   // variance for unstructured baseline hazard
   //matrix<lower=0>[T, G] grp_baseline;      // group-level unstructured baseline hazard for each timepoint t
-  //vector[G-1] grp_mu;          // group-level difference in baseline hazard (from group 1, across all timepoints)
+  vector[G-1] grp_mu_raw;          // group-level difference in baseline hazard (from group 1, across all timepoints)
 
   vector[M] beta;              // overall beta for each covariate
   vector[M] beta_sigma;        // variance for each covariate
@@ -80,9 +80,12 @@ parameters {
 }
 transformed parameters {
   vector<lower=0>[N] hazard;
+  vector[G] grp_mu;
+
+  grp_mu <- append_row(0, grp_mu_raw);
   
   for (n in 1:N) {
-    hazard[n] <- exp(x[n,]*grp_beta[,g[n]] + t_dur[t[n]])*baseline[t[n]];
+    hazard[n] <- exp(grp_mu[g[n]] + x[n,]*grp_beta[,g[n]]) * baseline[t[n]] * t_dur[t[n]];
   }
 }
 model {
@@ -94,25 +97,18 @@ model {
     baseline[i] ~ normal(baseline[i-1], baseline_sigma);
   }
 
-  /*
   // priors on per-group baseline hazard
-  grp_mu ~ normal(0, 1);
-  grp_baseline_sigma_loc ~ normal(0, 1);
-  grp_baseline_sigma_sigma ~ cauchy(0, 1);
-  for (i in 1:T) {
-      grp_baseline_sigma[i] ~ normal(grp_baseline_sigma_loc, grp_baseline_sigma_sigma);
-      for (grp in 1:G) {
-        if (grp == 1) {
-          grp_baseline[i,grp] ~ normal(baseline[i], grp_baseline_sigma[i]);
-        }
-        else {
-          grp_baseline[i,grp] ~ normal(baseline[i] + grp_mu[grp-1], grp_baseline_sigma[i]);
-        }
-      }
-  }
-  */
+  //grp_baseline_sigma_loc ~ normal(0, 1);
+  //grp_baseline_sigma_sigma ~ cauchy(0, 1);
+  //for (i in 1:T) {
+  //    grp_baseline_sigma[i] ~ normal(grp_baseline_sigma_loc, grp_baseline_sigma_sigma);
+  //    for (grp in 1:G) {
+  //      grp_baseline[i, grp] ~ normal(baseline[i], grp_baseline_sigma[i]);
+  //    }
+  //}
 
   // priors on beta coefficients
+  grp_mu_raw ~ normal(0, 1);
   beta ~ cauchy(0, 2);
   beta_sigma ~ cauchy(0, 1);
   for (grp in 1:G) {
