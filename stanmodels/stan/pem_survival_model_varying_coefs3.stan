@@ -41,8 +41,8 @@ data {
   real<lower=0> obs_t[N];         // observed end time for each obs
 }
 transformed data {
-  real t_dur[T];  // duration for each timepoint
-  real t_obs[T];  // observed end time for each timepoint
+  real<lower=0> t_dur[T];  // duration for each timepoint
+  real<lower=0> t_obs[T];  // observed end time for each timepoint
   real c;
   real r;
   
@@ -61,6 +61,7 @@ transformed data {
   t_dur[1] <- t_obs[1];
   for (i in 2:T) {
       t_dur[i] <- t_obs[i] - t_obs[i-1];
+      print(t_dur[i]);
   }
 }
 parameters {
