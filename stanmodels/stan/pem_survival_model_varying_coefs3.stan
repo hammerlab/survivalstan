@@ -82,14 +82,14 @@ transformed parameters {
   vector<lower=0>[N] hazard;
   
   for (n in 1:N) {
-    hazard[n] <- exp(x[n,]*grp_beta[,g[n]])*baseline[t[n]]*t_dur[t[n]];
+    hazard[n] <- exp(x[n,]*grp_beta[,g[n]] + t_dur[t[n]])*baseline[t[n]];
   }
 }
 model {
 
   // priors on baseline hazard (average across groups)
   baseline_sigma ~ cauchy(0, 1);
-  baseline[1] ~ normal(0, 1);
+  baseline[1] ~ normal(0.1, 0.1);
   for (i in 2:T) {
     baseline[i] ~ normal(baseline[i-1], baseline_sigma);
   }
