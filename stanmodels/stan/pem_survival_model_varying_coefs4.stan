@@ -43,9 +43,11 @@ data {
 transformed data {
   real<lower=0> t_dur[T];  // duration for each timepoint
   real<lower=0> t_obs[T];  // observed end time for each timepoint
+  vector[1] zero;
   real c;
   real r;
   
+  zero[1] <- 0;
   // baseline hazard params (fixed)
   c <- 0.001; 
   r <- 0.1;
@@ -82,7 +84,7 @@ transformed parameters {
   vector<lower=0>[N] hazard;
   vector[G] grp_mu;
 
-  grp_mu <- append_row(vector(0), grp_mu_raw);
+  grp_mu <- append_row(zero, grp_mu_raw);
   
   for (n in 1:N) {
     hazard[n] <- exp(grp_mu[g[n]] + x[n,] * grp_beta[,g[n]]) * baseline[t[n]] * t_dur[t[n]];
