@@ -82,7 +82,7 @@ transformed parameters {
   vector<lower=0>[N] hazard;
   vector[G] grp_mu;
 
-  grp_mu <- append_row(0, grp_mu_raw);
+  grp_mu <- append_row(vector(0), grp_mu_raw);
   
   for (n in 1:N) {
     hazard[n] <- exp(grp_mu[g[n]] + x[n,] * grp_beta[,g[n]]) * baseline[t[n]] * t_dur[t[n]];
