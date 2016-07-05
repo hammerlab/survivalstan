@@ -56,6 +56,9 @@ testfit_wei = stanmodels.fit_stan_survival_model(
 ## coefplot for Weibull coefficient estimates
 sb.boxplot(x = 'value', y = 'variable', data = testfit_wei['coefs'])
 
+## print summary of MCMC draws from posterior for each parameter
+print(testfit_wei['fit'])
+
 
 ## e.g. fit Piecewise-exponential survival model 
 dlong = stanmodels.prep_data_long_surv(d, time_col = 'futime', event_col = 'death')
@@ -71,11 +74,14 @@ testfit_pem = stanmodels.fit_stan_survival_model(
 	chains = 4,
 	)
 
+## print summary of MCMC draws from posterior for each parameter
+print(testfit_pem['fit'])
+
 ## coefplot for PEM model results
 sb.boxplot(x = 'value', y = 'variable', data = testfit_pem['coefs'])
 
 ## e.g. compare models using PSIS-LOO
-stanity.loo_compare(testfit_wei['fit'], testfit_pem['fit'])
+stanity.loo_compare(testfit_wei['loo'], testfit_pem['loo'])
 
 ## compare coefplots 
 sb.boxplot(x = 'value', y = 'variable', hue = 'model_cohort',
