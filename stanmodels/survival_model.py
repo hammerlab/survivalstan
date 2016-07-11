@@ -130,7 +130,9 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
         survival_model_input_data['obs_t'] = df_nonmiss[timepoint_end_col].values.astype(int)
 
     if stan_data:
-        survival_model_input_data = survival_model_input_data.update(stan_data)
+        survival_model_input_data = dict(survival_model_input_data, **stan_data)
+    
+    print(stan_data)
     
     if make_inits:
         kwargs = dict(kwargs, init = make_inits(survival_model_input_data))
