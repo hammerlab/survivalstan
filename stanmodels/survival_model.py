@@ -11,7 +11,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
                              sample_id_col = None, sample_col = None,
                              group_id_col = None, group_col = None,
                              timepoint_id_col = None, timepoint_end_col = None,
-                             make_inits = None,
+                             make_inits = None, stan_data = None,
                              *args, **kwargs):
     """This function prepares inputs appropriate for stan model model code, and fits that model using Stan.
 
@@ -30,6 +30,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
        group_col (chr): name of column containing group descriptions - will be converted to an ID 
        timepoint_id_col (chr): name of column containing timepoint ids (1-indexed & sequential)
        timepoint_end_col (chr): name of column containing end times for each timepoint (will be converted to an ID)
+       stan_data (dict): extra params passed to stan data object
 
     Returns:
        dictionary of results objects.  Contents::
@@ -127,6 +128,9 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
         
     if timepoint_end_col:
         survival_model_input_data['obs_t'] = df_nonmiss[timepoint_end_col].values.astype(int)
+
+    if stan_data:
+        survival_model_input_data = survival_model_input_data.update(stan_data)
     
     if make_inits:
         kwargs = dict(kwargs, init = make_inits(survival_model_input_data))
