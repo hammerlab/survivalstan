@@ -132,8 +132,6 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
     if stan_data:
         survival_model_input_data = dict(survival_model_input_data, **stan_data)
     
-    print(stan_data)
-    
     if make_inits:
         kwargs = dict(kwargs, init = make_inits(survival_model_input_data))
     
