@@ -13,12 +13,12 @@ Installation / Usage
 
 To install use pip:
 
-    $ pip install stanmodels
+    $ pip install survivalstan
 
 
 Or clone the repo:
 
-    $ git clone https://github.com/jburos/stanmodels.git
+    $ git clone https://github.com/jburos/survivalstan.git
     $ python setup.py install
     
 Contributing
@@ -30,7 +30,7 @@ Example
 -------
 
 ```
-import stanmodels
+import survivalstan
 import stanity
 import seaborn as sb
 import matplotlib.pyplot as plt
@@ -41,16 +41,16 @@ d  = dataset.data.query('futime > 7')
 d.reset_index(level = 0, inplace = True)
 
 ## e.g. fit Weibull survival model
-testfit_wei = stanmodels.fit_stan_survival_model(
+testfit_wei = survivalstan.fit_stan_survival_model(
 	model_cohort = 'Weibull model',
-	model_code = stanmodels.stan.weibull_survival_model,
+	model_code = survivalstan.stan.weibull_survival_model,
 	df = d,
 	time_col = 'futime',
 	event_col = 'death',
 	formula = 'age + sex',
 	iter = 3000,
 	chains = 4,
-	make_inits = stanmodels.make_weibull_survival_model_inits
+	make_inits = survivalstan.make_weibull_survival_model_inits
 	)
 
 ## coefplot for Weibull coefficient estimates
@@ -58,10 +58,10 @@ sb.boxplot(x = 'value', y = 'variable', data = testfit_wei['coefs'])
 
 
 ## e.g. fit Piecewise-exponential survival model 
-dlong = stanmodels.prep_data_long_surv(d, time_col = 'futime', event_col = 'death')
-testfit_pem = stanmodels.fit_stan_survival_model(
+dlong = survivalstan.prep_data_long_surv(d, time_col = 'futime', event_col = 'death')
+testfit_pem = survivalstan.fit_stan_survival_model(
 	model_cohort = 'PEM model',
-	model_code = stanmodels.stan.pem_survival_model,
+	model_code = survivalstan.stan.pem_survival_model,
 	df = dlong,
 	sample_col = 'index',
 	timepoint_end_col = 'end_time',

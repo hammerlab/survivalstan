@@ -1,1 +1,1 @@
-recursive-include stanmodels/stan *
+recursive-include survivalstan/stan *
