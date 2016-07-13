@@ -35,11 +35,4 @@ def read_files(path, pattern, encoding="utf-8", resource = None):
         results[file_data['basename']] = file_data['code']
     return(results)
 
-## load local stan files into 'models' object
-
-models = read_files(
-    path = os.path.join(os.getcwd(), 'stan'),
-    pattern = "*.stan",
-    resource = __name__
-    )
 
