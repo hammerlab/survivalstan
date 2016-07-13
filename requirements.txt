@@ -6,7 +6,3 @@ pypi-publisher
 nose>=1.3.3
 pylint>=1.4.4
 git+git://github.com/hammerlab/stanity
-os
-fnmatch
-ntpath
-pkg_resources
