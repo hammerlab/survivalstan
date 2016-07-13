@@ -1,45 +1,23 @@
-import os
-from fnmatch import fnmatch
-import ntpath
-import pkg_resources
+import pkg_resources, os
 
-## indexes a directory of stan files
-## returns as dictionary containing contents of files
+resource_package = __name__  ## Could be any module/package name.
 
-def _list_files_in_path(path, pattern = "*.stan"):
-    results = []
-    for dirname, subdirs, files in os.walk(path):
-        for name in files:
-            if fnmatch(name, pattern):
-                results.append(os.path.join(dirname, name))
-    return(results)
+_pem_survival_path = os.path.join('stan', 'pem_survival_model.stan')
+_pem_survival_varcoef_path = os.path.join('stan', 'pem_survival_model_varying_coefs.stan')
+_pem_survival_varcoef_path2 = os.path.join('stan', 'pem_survival_model_varying_coefs2.stan')
+_pem_survival_varcoef_path4 = os.path.join('stan', 'pem_survival_model_varying_coefs4.stan')
+_weibull_survival_path = os.path.join('stan', 'weibull_survival_model.stan')
+_weibull_survival_varcoef_path = os.path.join('stan', 'weibull_survival_model_varying_coefs.stan')
 
-def _read_file(filepath, resource = None):
-    print(filepath)
-    if not(resource):
-        with open(filepath, 'r') as myfile:
-            data=myfile.read()
-    else:
-        data = pkg_resources.resource_string(
-            resource, filepath)
-    return data
-
-def read_files(path, pattern, encoding="utf-8", resource = None):
-    files = _list_files_in_path(path = path, pattern=pattern)
-    results = {}
-    for file in files:
-        file_data = {}
-        file_data['path'] = file
-        file_data['basename'] = ntpath.basename(file)
-        file_data['code'] = _read_file(file, resource = resource).decode(encoding)
-        results[file_data['basename']] = file_data['code']
-    return(results)
-
-## load local stan files into 'models' object
-
-models = read_files(
-    path = os.path.join(os.getcwd(), 'stan'),
-    pattern = "*.stan",
-    resource = __name__
-    )
-
+pem_survival_model = pkg_resources.resource_string(
+	resource_package, _pem_survival_path).decode("utf-8") 
+pem_survival_model_varying_coefs = pkg_resources.resource_string(
+	resource_package, _pem_survival_varcoef_path).decode("utf-8") 
+pem_survival_model_varying_coefs2 = pkg_resources.resource_string(
+	resource_package, _pem_survival_varcoef_path2).decode("utf-8") 
+pem_survival_model_varying_coefs4 = pkg_resources.resource_string(
+	resource_package, _pem_survival_varcoef_path4).decode("utf-8") 
+weibull_survival_model = pkg_resources.resource_string(
+	resource_package, _weibull_survival_path).decode("utf-8") 
+weibull_survival_model_varying_coefs = pkg_resources.resource_string(
+	resource_package, _weibull_survival_varcoef_path).decode("utf-8") 
