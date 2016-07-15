@@ -11,14 +11,14 @@ Library of Stan Models for Survival Analysis
 Installation / Usage
 --------------------
 
-Once we push this repo to pypi, you will be able to install use pip:
+Once we push this repo to pypi, you will be able to install using pip, as:
 
     $ pip install survivalstan ## (not yet set up)
 
 
 For now, please clone the repo:
 
-    $ git clone https://github.com/jburos/survivalstan.git
+    $ git clone https://github.com/hammerlab/survivalstan.git
     $ pip install .
 
 Contributing
