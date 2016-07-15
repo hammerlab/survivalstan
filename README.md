@@ -1,4 +1,4 @@
-Stan Models
+survivalstan: Survival Models in Stan
 ===============================
 
 author: Jacki Novik
@@ -6,21 +6,21 @@ author: Jacki Novik
 Overview
 --------
 
-Library of Stan Models for Computational Biology
+Library of Stan Models for Survival Analysis
 
 Installation / Usage
 --------------------
 
-To install use pip:
+Once we push this repo to pypi, you will be able to install use pip:
 
-    $ pip install survivalstan
+    $ pip install survivalstan ## (not yet set up)
 
 
-Or clone the repo:
+For now, please clone the repo:
 
     $ git clone https://github.com/jburos/survivalstan.git
-    $ python setup.py install
-    
+    $ pip install .
+
 Contributing
 ------------
 
@@ -34,6 +34,7 @@ import survivalstan
 import stanity
 import seaborn as sb
 import matplotlib.pyplot as plt
+import statsmodels
 
 ## load flchain test data from R's `survival` package
 dataset = statsmodels.datasets.get_rdataset(package = 'survival', dataname = 'flchain' )
@@ -43,7 +44,7 @@ d.reset_index(level = 0, inplace = True)
 ## e.g. fit Weibull survival model
 testfit_wei = survivalstan.fit_stan_survival_model(
 	model_cohort = 'Weibull model',
-	model_code = survivalstan.stan.weibull_survival_model,
+	model_code = survivalstan.models.weibull_survival_model,
 	df = d,
 	time_col = 'futime',
 	event_col = 'death',
@@ -64,7 +65,7 @@ print(testfit_wei['fit'])
 dlong = survivalstan.prep_data_long_surv(d, time_col = 'futime', event_col = 'death')
 testfit_pem = survivalstan.fit_stan_survival_model(
 	model_cohort = 'PEM model',
-	model_code = survivalstan.stan.pem_survival_model,
+	model_code = survivalstan.models.pem_survival_model,
 	df = dlong,
 	sample_col = 'index',
 	timepoint_end_col = 'end_time',
