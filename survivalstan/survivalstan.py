@@ -11,7 +11,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
                              sample_id_col = None, sample_col = None,
                              group_id_col = None, group_col = None,
                              timepoint_id_col = None, timepoint_end_col = None,
-                             make_inits = None,
+                             make_inits = None, stan_data = None,
                              *args, **kwargs):
     """This function prepares inputs appropriate for stan model model code, and fits that model using Stan.
 
@@ -30,6 +30,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
        group_col (chr): name of column containing group descriptions - will be converted to an ID 
        timepoint_id_col (chr): name of column containing timepoint ids (1-indexed & sequential)
        timepoint_end_col (chr): name of column containing end times for each timepoint (will be converted to an ID)
+       stan_data (dict): extra params passed to stan data object
 
     Returns:
        dictionary of results objects.  Contents::
@@ -127,6 +128,9 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
         
     if timepoint_end_col:
         survival_model_input_data['obs_t'] = df_nonmiss[timepoint_end_col].values.astype(int)
+
+    if stan_data:
+        survival_model_input_data = dict(survival_model_input_data, **stan_data)
     
     if make_inits:
         kwargs = dict(kwargs, init = make_inits(survival_model_input_data))
@@ -142,7 +146,9 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
         survival_fit.extract()['beta'],
         columns = x_df.columns
     )
-    beta_coefs = pd.melt(beta_coefs)
+    beta_coefs.reset_index(0, inplace = True)
+    beta_coefs = beta_coefs.rename(columns = {'index':'iter'})
+    beta_coefs = pd.melt(beta_coefs, id_vars = ['iter'])
     beta_coefs['model_cohort'] = model_cohort
     
     ## prep by-group coefs if group specified
@@ -179,6 +185,43 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
         'loo': loo,
         'model_cohort': model_cohort,
     }
+
+def extract_grp_baseline_hazard(results, timepoint_id_col = 'timepoint_id', timepoint_end_col = 'end_time'):
+    """ If model results contain a grp_baseline object, extract & summarize it
+    """
+
+    ## TODO check if results are by-group
+    ## TODO check if baseline hazard is computable
+    grp_baseline_extract = results['fit'].extract()['grp_baseline']
+    coef_group_names = results['grp_coefs']['group'].unique()
+    i = 0
+    grp_baseline_data = list()
+    for grp in coef_group_names:
+        grp_base = pd.DataFrame(grp_baseline_extract[:,:,i])
+        grp_base_coefs = pd.melt(grp_base, var_name=timepoint_id_col, value_name='baseline_hazard')
+        grp_base_coefs['group'] = grp
+        grp_baseline_data.append(grp_base_coefs)
+        i = i+1
+    grp_baseline_coefs = pd.concat(grp_baseline_data)
+    end_times = _extract_timepoint_end_times(results, timepoint_id_col = timepoint_id_col, timepoint_end_col = timepoint_end_col)
+    bs_data = pd.merge(grp_baseline_coefs, end_times, on = timepoint_id_col) 
+    return(bs_data)
+
+def _extract_timepoint_end_times(results, timepoint_end_col = 'end_time', timepoint_id_col = 'timepoint_id'):
+    df_nonmiss = results['df']
+    end_times = df_nonmiss.loc[~df_nonmiss[[timepoint_id_col]].duplicated()].sort_values(timepoint_id_col)[[timepoint_end_col, timepoint_id_col]]
+    return(end_times)
+
+def extract_baseline_hazard(results, timepoint_id_col = 'timepoint_id', timepoint_end_col = 'end_time'):
+    """ If model results contain a baseline object, extract & summarize it
+    """
+    ## TODO check if baseline hazard is computable
+    baseline_extract = results['fit'].extract()['baseline']
+    baseline_coefs = pd.DataFrame(baseline_extract)
+    bs_coefs = pd.melt(baseline_coefs, var_name = timepoint_id_col, value_name = 'baseline_hazard')
+    end_times = _extract_timepoint_end_times(results, timepoint_id_col = timepoint_id_col, timepoint_end_col = timepoint_end_col)
+    bs_data = pd.merge(bs_coefs, end_times, on = timepoint_id_col) 
+    return(bs_data)
 
 ## convert wide survival data to long format
 def prep_data_long_surv(df, time_col, event_col):

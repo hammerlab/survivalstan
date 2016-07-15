@@ -17,16 +17,16 @@ with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
     all_reqs = f.read().split('\n')
 
 install_requires = [x.strip() for x in all_reqs if 'git+' not in x]
-dependency_links = [x.strip().replace('git+', '') for x in all_reqs if 'git+' not in x]
+dependency_links = [x.strip().replace('git+','') for x in all_reqs if 'git+' in x]
 
 setup(
-    name='stanmodels',
+    name='survivalstan',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     description='Library of Stan Models for Computational Biology',
     long_description=long_description,
-    url='https://github.com/jburos/stanmodels',
-    download_url='https://github.com/jburos/stanmodels/tarball/' + versioneer.get_version(),
+    url='https://github.com/jburos/survivalstan',
+    download_url='https://github.com/jburos/survivalstan/tarball/' + versioneer.get_version(),
     license="http://www.apache.org/licenses/LICENSE-2.0.html",
     classifiers=[
         "Development Status :: 3 - Alpha",
