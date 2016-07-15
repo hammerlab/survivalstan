@@ -23,10 +23,10 @@ setup(
     name='survivalstan',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    description='Library of Stan Models for Computational Biology',
+    description='Library of Stan Models for Survival Analysis',
     long_description=long_description,
-    url='https://github.com/jburos/survivalstan',
-    download_url='https://github.com/jburos/survivalstan/tarball/' + versioneer.get_version(),
+    url='https://github.com/hammerlab/survivalstan',
+    download_url='https://github.com/hammerlab/survivalstan/tarball/' + versioneer.get_version(),
     license="http://www.apache.org/licenses/LICENSE-2.0.html",
     classifiers=[
         "Development Status :: 3 - Alpha",
