@@ -38,3 +38,11 @@ script:
   - nosetests test --with-coverage --cover-package=stanmodels && ./lint.sh
 after_success:
   coveralls
+deploy:
+ provider: pypi
+ user: hammerlab
+ password: # See http://docs.travis-ci.com/user/encryption-keys/
+  secure: "weztV3HeMuiBShFxRrFS8IMWh/Yu+wjN8IrCT4IyB3I1GU5n3HIqKji0+M1/VWTEGhwVqPZw9yY0zQle9MYZRp4/QLQh8qLOEs3GvM4xWe3wEzJIm0nAWbyYd1dK1O3dzdyXRFenlw9NDFzgYQDrxnM/z9f4C/v2KanWkLJxoOhejyRnuyQnNlzUSAUyP0AS3TkhD3BwK0NVeW3oynrdsKjsQpfJDk1lqRzhUEXe+m6/g6qN1uFFYvLYtpxFGxNubxzduMDPa2RR9GZtlMkwQIgEsY6DBem/85Uhel2tjm59MJjxp5K3cGtF/IzQIUBEe0WlK2LpbKlLGkZZ7thMGO2XeivrPYrmuD3isUmYFDTwvjp4MnbOS4m44ZrNZzTgwP7Icz7t6M4+NWdSNv274K0lh3Ag2mIvUVA8NYhFWCj31fWqEPd8kk/ADta/+Pi6vWDTFK2dZllw2tZtnnkFVmfkm+PteGyHUGmh0lO9zAtzjd05YycFM3ipjNFQChBMwZN75MXptnBDM8Tg8LuckxNfZ7wmBALJ3JndZqKbHZqi67vGZ2KabmODozHdyZLh7o6YRLuXx5M8u6TUBEadpFHuA8KmQHl2rnFJmVDbg7hPoDiJ4yLKB1EgrWIEDAhokHkXY44LZL40qbZ+X/28D3YGOSr4NRRUdLXTuK2fPCQ="
+ on:
+   branch: master
+   tags: True

@@ -3,4 +3,4 @@
 omit = 
 	test/*
 	versioneer.py
-	cohorts/_version.py
+	survivalstan/_version.py
