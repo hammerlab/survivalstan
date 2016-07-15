@@ -35,7 +35,7 @@ install:
   - pip install coveralls
 script:
   - pyensembl install --release 75 --species human
-  - nosetests test --with-coverage --cover-package=stanmodels && ./lint.sh
+  - nosetests test --with-coverage --cover-package=survivalstan && ./lint.sh
 after_success:
   coveralls
 deploy:
