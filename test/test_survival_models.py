@@ -1,7 +1,7 @@
 
 import statsmodels
 import survivalstan
-from nose.tools import ok_
+from nose.tools import ok_, nottest
 
 def load_test_dataset():
 	''' Load test dataset from R survival package
@@ -22,8 +22,8 @@ def test_weibull_model():
 		time_col = 'futime',
 		event_col = 'death',
 		formula = 'age + sex',
-		iter = 3000,
-		chains = 4,
+		iter = 200,
+		chains = 2,
 		make_inits = survivalstan.make_weibull_survival_model_inits
 		)
 	ok_('fit' in testfit)
@@ -31,6 +31,7 @@ def test_weibull_model():
 	ok_('loo' in testfit)
 	return(testfit)
 
+@nottest
 def test_pem_model():
 	''' Test Weibull survival model on test dataset
 	'''
@@ -44,7 +45,7 @@ def test_pem_model():
 		timepoint_end_col = 'end_time',
 		event_col = 'end_failure',
 		formula = 'age + sex',
-		iter = 3000,
+		iter = 500,
 		chains = 4,
 		)
 	ok_('fit' in testfit)
@@ -52,6 +53,8 @@ def test_pem_model():
 	ok_('loo' in testfit)
 	return(testfit)
 
+
+@nottest
 def test_pem_varcoef_model():
 	''' Test varying-coef PEM survival model on test dataset
 	'''
@@ -66,7 +69,7 @@ def test_pem_varcoef_model():
 		event_col = 'end_failure',
 		group_col = 'chapter',
 		formula = 'age + sex',
-		iter = 3000,
+		iter = 500,
 		chains = 4,
 		)
 	ok_('fit' in testfit)
