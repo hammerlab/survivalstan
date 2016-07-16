@@ -15,7 +15,7 @@
 __all__ = ["utils", "models"]
 
 import sys as _sys
-if (sys.version_info > (3, 0)):
+if (_sys.version_info > (3, 0)):
     from .survivalstan import *
     # Python 3 code in this block
     __all__ = ['utils', 'models']
