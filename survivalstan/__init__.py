@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import utils
-import models
+__all__ = ["utils", "models"]
+
 from survivalstan import *
+from .survivalstan import *
 
 from ._version import get_versions
 __version__ = get_versions()['version']
