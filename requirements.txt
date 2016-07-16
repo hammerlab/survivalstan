@@ -3,6 +3,8 @@ sphinx
 sphinx_rtd_theme
 coverage
 pypi-publisher
+Cython>=0.19
+numpy
 nose>=1.3.3
 pylint>=1.4.4
 stanity>=0.1.2
