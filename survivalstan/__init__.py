@@ -16,6 +16,8 @@ __all__ = ["utils", "models"]
 
 from survivalstan import *
 from .survivalstan import *
+import utils
+import models
 
 from ._version import get_versions
 __version__ = get_versions()['version']
