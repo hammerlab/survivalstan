@@ -22,7 +22,7 @@ def test_weibull_model():
 		time_col = 'futime',
 		event_col = 'death',
 		formula = 'age + sex',
-		iter = 200,
+		iter = 100,
 		chains = 2,
 		make_inits = survivalstan.make_weibull_survival_model_inits
 		)
