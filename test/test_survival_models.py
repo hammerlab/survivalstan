@@ -22,7 +22,7 @@ def test_weibull_model():
         time_col = 'futime',
         event_col = 'death',
         formula = 'age + sex',
-        iter = 1000,
+        iter = 500,
         chains = 2,
         make_inits = survivalstan.make_weibull_survival_model_inits
         )
@@ -31,6 +31,7 @@ def test_weibull_model():
     ok_('loo' in testfit)
     return(testfit)
 
+@nottest
 def test_pem_model():
     ''' Test Weibull survival model on test dataset
     '''
