@@ -1,5 +1,5 @@
 [TYPECHECK]
 # Without ignoring this, we get errors like:
 # E:249,20: Module 'numpy' has no 'nan' member (no-member)
-ignored-modules = numpy, finfo, numpy.random, patsy.dmatrix
-ignored-classes = numpy, finfo, patsy.dmatrix
+ignored-modules = numpy, finfo, numpy.random, patsy
+ignored-classes = numpy, finfo, patsy
