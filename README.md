@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/hammerlab/survivalstan.svg?branch=setup-travis)](https://travis-ci.org/hammerlab/survivalstan) 
+[![Coverage Status](https://coveralls.io/repos/github/hammerlab/survivalstan/badge.svg?branch=master)](https://coveralls.io/github/hammerlab/survivalstan?branch=master)
+
 survivalstan: Survival Models in Stan
 ===============================
 
