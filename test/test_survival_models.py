@@ -1,7 +1,9 @@
 
 import statsmodels
 import survivalstan
+import random
 from nose.tools import ok_, nottest
+random.seed(9001)
 
 def load_test_dataset():
     ''' Load test dataset from R survival package
@@ -22,9 +24,10 @@ def test_weibull_model():
         time_col = 'futime',
         event_col = 'death',
         formula = 'age + sex',
-        iter = 500,
+        iter = 1000,
         chains = 2,
-        make_inits = survivalstan.make_weibull_survival_model_inits
+        make_inits = survivalstan.make_weibull_survival_model_inits,
+        seed = 9001
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
@@ -45,8 +48,9 @@ def test_pem_model():
         timepoint_end_col = 'end_time',
         event_col = 'end_failure',
         formula = 'age + sex',
-        iter = 500,
+        iter = 1000,
         chains = 4,
+        seed = 9001
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
@@ -71,6 +75,7 @@ def test_pem_varcoef_model():
         formula = 'age + sex',
         iter = 500,
         chains = 4,
+        seed = 9001
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
