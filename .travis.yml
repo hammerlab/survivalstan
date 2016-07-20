@@ -1,5 +1,6 @@
 sudo: false  # Use container-based infrastructure
 language: python
+cache: pip
 python:
   - "2.7"
   - "3.4"
@@ -29,12 +30,22 @@ addons:
 install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy nose pandas matplotlib
   - source activate test-environment
-  - pip install pypandoc
+  - pip install pypandoc statsmodels
   - pip install -r requirements.txt
   - pip install .
   - pip install coveralls
 script:
-  - pyensembl install --release 75 --species human
-  - nosetests test --with-coverage --cover-package=stanmodels && ./lint.sh
+  - ./lint.sh
+  - travis_wait 120 nosetests -w test -s --with-coverage --cover-package=survivalstan
+  # travis_wait 120 nosetests -w test -s test_survival_models.py:test_pem_varcoef_model --with-coverage --cover-package=survivalstan
+  # travis_wait 120 nosetests -w test -s test_survival_models.py:test_pem_model --with-coverage --cover-package=survivalstan
 after_success:
   coveralls
+deploy:
+ provider: pypi
+ user: hammerlab
+ password: # See http://docs.travis-ci.com/user/encryption-keys/
+  secure: "weztV3HeMuiBShFxRrFS8IMWh/Yu+wjN8IrCT4IyB3I1GU5n3HIqKji0+M1/VWTEGhwVqPZw9yY0zQle9MYZRp4/QLQh8qLOEs3GvM4xWe3wEzJIm0nAWbyYd1dK1O3dzdyXRFenlw9NDFzgYQDrxnM/z9f4C/v2KanWkLJxoOhejyRnuyQnNlzUSAUyP0AS3TkhD3BwK0NVeW3oynrdsKjsQpfJDk1lqRzhUEXe+m6/g6qN1uFFYvLYtpxFGxNubxzduMDPa2RR9GZtlMkwQIgEsY6DBem/85Uhel2tjm59MJjxp5K3cGtF/IzQIUBEe0WlK2LpbKlLGkZZ7thMGO2XeivrPYrmuD3isUmYFDTwvjp4MnbOS4m44ZrNZzTgwP7Icz7t6M4+NWdSNv274K0lh3Ag2mIvUVA8NYhFWCj31fWqEPd8kk/ADta/+Pi6vWDTFK2dZllw2tZtnnkFVmfkm+PteGyHUGmh0lO9zAtzjd05YycFM3ipjNFQChBMwZN75MXptnBDM8Tg8LuckxNfZ7wmBALJ3JndZqKbHZqi67vGZ2KabmODozHdyZLh7o6YRLuXx5M8u6TUBEadpFHuA8KmQHl2rnFJmVDbg7hPoDiJ4yLKB1EgrWIEDAhokHkXY44LZL40qbZ+X/28D3YGOSr4NRRUdLXTuK2fPCQ="
+ on:
+   branch: master
+   tags: True

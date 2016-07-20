@@ -24,7 +24,7 @@ def _read_file(filepath, resource = None):
             resource, filepath)
     return data
 
-def read_files(path, pattern, encoding="utf-8", resource = None):
+def read_files(path, pattern = '*.stan', encoding="utf-8", resource = None):
     files = _list_files_in_path(path = path, pattern=pattern)
     results = {}
     for file in files:
