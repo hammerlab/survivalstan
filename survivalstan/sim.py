@@ -9,7 +9,7 @@
 import numpy as np
 import pandas as pd
 
-def simulate_exp_survival_data(N, censor_time, rate):
+def sim_data_exp(N, censor_time, rate):
     """
       simulate true lifetimes (t) according to exponential model
 
