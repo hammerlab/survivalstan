@@ -36,6 +36,7 @@ def test_weibull_model():
     return(testfit)
 
 
+@nottest
 def test_null_weibull_model():
     ''' Test Weibull survival model on test dataset
     '''
@@ -58,6 +59,7 @@ def test_null_weibull_model():
     return(testfit)
 
 
+@nottest
 def test_pem_model():
     ''' Test PEM unstructured survival model on test dataset
     '''
