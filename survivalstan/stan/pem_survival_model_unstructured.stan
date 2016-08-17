@@ -18,7 +18,6 @@
 */
 // Jacqueline Buros Novik <jackinovik@gmail.com>
 
-
 data {
   // dimensions
   int<lower=1> N;
@@ -43,13 +42,13 @@ transformed data {
 }
 parameters {
   vector[T] log_baseline_raw; // unstructured baseline hazard for each timepoint t
-  vector[M] beta;                      // beta for each covariate
+  vector[M] beta;         // beta for each covariate
   real<lower=0> baseline_sigma;
   real log_baseline_mu;
 }
 transformed parameters {
   vector[N] log_hazard;
-  vector[T] log_baseline;
+  vector[T] log_baseline;     // unstructured baseline hazard for each timepoint t
   
   log_baseline = log_baseline_raw + log_t_dur;
   
@@ -62,10 +61,7 @@ model {
   event ~ poisson_log(log_hazard);
   log_baseline_mu ~ normal(0, 1);
   baseline_sigma ~ normal(0, 1);
-  log_baseline_raw[1] ~ normal(0, 1);
-  for (i in 2:T) {
-      log_baseline_raw[i] ~ normal(log_baseline_raw[i-1], baseline_sigma);
-  }
+  log_baseline_raw ~ normal(0, baseline_sigma);
 }
 generated quantities {
   real log_lik[N];
@@ -75,8 +71,9 @@ generated quantities {
   // compute raw baseline hazard, for summary/plotting
   baseline_raw = exp(log_baseline_raw);
   
+  // prepare yhat_uncens & log_lik
   for (n in 1:N) {
       //yhat_uncens[n] = poisson_log_rng(log_hazard[n]);
-      log_lik[n] <- poisson_log_log(event[n], log_hazard[n]);
+      log_lik[n] = poisson_log_log(event[n], log_hazard[n]);
   }
 }
