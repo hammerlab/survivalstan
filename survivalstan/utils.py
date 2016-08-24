@@ -129,7 +129,7 @@ def _prep_data_for_baseline_hazard(models, element='baseline'):
     return 'log_hazard', 'end_time_id', df
 
 
-def plot_coefs(models, element='coefs', force_direction=None):
+def plot_coefs(models, element='coefs', force_direction=None, trans=None):
     """
     Plot coefficients for models listed
 
@@ -148,6 +148,10 @@ def plot_coefs(models, element='coefs', force_direction=None):
             - if 'h': forces horizontal orientation, (`variable` names along the x axis)
             - if 'v': forces vertical orientation (`variable` names along the y axis)
         if None (default), coef plots default to 'v' for all plots except baseline hazard.
+    trans (function, optional):
+        If present, transforms value of `value` column
+            - example: np.exp to plot exp(beta)
+        if None (default), plots raw value
 
     """
 
@@ -158,7 +162,9 @@ def plot_coefs(models, element='coefs', force_direction=None):
         value, variable, df = _prep_data_for_baseline_hazard(models, element=element)
     else:
         value, variable, df = _prep_data_for_coefs(models=models, element=element)
-
+    
+    if trans:
+        df[value] = trans(df[value])
 
     # select hue depending on number of elements
     if len(models)==1:
