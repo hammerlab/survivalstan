@@ -174,21 +174,55 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
     
     ## prep by-group coefs if group specified
     if group_id_col:
-        if group_col:
-            grp_names = df_nonmiss.loc[~df_nonmiss[[group_id_col]].duplicated()].sort_values(group_id_col)[group_col].values
-        else:
-            grp_names = df_nonmiss.loc[~df_nonmiss[[group_id_col]].duplicated()].sort_values(group_id_col)[group_id_col].values
-        grp_coefs_extract = survival_fit.extract()['grp_beta']
-        grp_coefs_data = list()
-        i = 0
-        for grp in grp_names:
-            grp_data = pd.DataFrame(grp_coefs_extract[:,:,i], columns = x_df.columns)
-            grp_data['group'] = grp 
-            grp_coefs_data.append(grp_data)
-            i = i+1
-        grp_coefs_data = pd.concat(grp_coefs_data)
-        grp_coefs = pd.melt(grp_coefs_data, id_vars = 'group')
-        grp_coefs['model_cohort'] = model_cohort
+        try:
+            if group_col:
+                grp_names = df_nonmiss.loc[
+                    ~df_nonmiss[[group_id_col]].duplicated()].sort_values(group_id_col)[group_col].values
+            else:
+                grp_names = df_nonmiss.loc[
+                    ~df_nonmiss[[group_id_col]].duplicated()].sort_values(group_id_col)[group_id_col].values
+            grp_coefs_extract = survival_fit.extract()['grp_beta']
+            grp_coefs_data = list()
+            ## try to guess shape of group-betas
+            if survival_model_input_data['M'] == survival_model_input_data['G']:
+                # unable to determine shape if M == G
+                print("Warning: unable to determine group-coef orientation.")
+                grp_beta_orientation = 'unknown'
+            elif grp_coefs_extract.shape[1] == survival_model_input_data['G']:
+                grp_beta_orientation = 'vector-vector'
+            elif grp_coefs_extract.shape[2] == survival_model_input_data['G']:
+                grp_beta_orientation = 'matrix'
+            if grp_beta_orientation == 'matrix':
+                try:
+                    i = 0
+                    for grp in grp_names:
+                        grp_data = pd.DataFrame(grp_coefs_extract[:,:,i], columns = x_df.columns)
+                        grp_data['group'] = grp 
+                        grp_coefs_data.append(grp_data)
+                        i = i+1
+                except:
+                    grp_coefs_data = None
+            elif grp_beta_orientation == 'vector-vector':
+                try:
+                    # alternate extraction method where group betas are vector of vectors
+                    i = 0
+                    for grp in grp_names:
+                        grp_data = pd.DataFrame(grp_coefs_extract[:,i,:], columns = x_df.columns)
+                        grp_data['group'] = grp 
+                        grp_coefs_data.append(grp_data)
+                        i = i+1
+                except:
+                    grp_coefs_data = None
+            else:
+                grp_coefs_data = None
+            if grp_coefs_data:
+                grp_coefs_data = pd.concat(grp_coefs_data)
+                grp_coefs = pd.melt(grp_coefs_data, id_vars='group')
+                grp_coefs['model_cohort'] = model_cohort
+            else:
+                grp_coefs = None
+        except:
+            grp_coefs = None
     else:
         grp_coefs = beta_coefs
         grp_coefs['group'] = 'Overall'
