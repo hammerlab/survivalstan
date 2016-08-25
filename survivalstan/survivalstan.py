@@ -247,20 +247,17 @@ def _extract_grp_coefs(survival_fit, element, grp_coef_type, grp_names, columns,
             raise Exception('unable to format grp coefs as vector-of-vectors')
     elif grp_coef_type == 'unknown':
         print("warning: unable to determine group-coef orientation. Try using arg `grp_coef_type`")
-        grp_coefs_data = None
+        return(None)
     else:
         print("Invalid `grp_coef_type` -- must be one of 'vector-of-vectors' or 'matrix'")
         print("Skipping grp coef extraction for now.")
-        grp_coefs_data = None
+        return(None)
     
     # process/format grp_coefs data
-    if grp_coefs_data:
-        grp_coefs = pd.melt(grp_coefs_data, id_vars=['group','iter'])
-        grp_coefs['exp(beta)'] = np.exp(grp_coefs['value'])
-        grp_coefs['group'] = grp_coefs.group.astype('category')
-        grp_coefs['model_cohort'] = model_cohort
-    else:
-        raise Exception('grp_coefs_data does not exist')
+    grp_coefs = pd.melt(grp_coefs_data, id_vars=['group','iter'])
+    grp_coefs['exp(beta)'] = np.exp(grp_coefs['value'])
+    grp_coefs['group'] = grp_coefs.group.astype('category')
+    grp_coefs['model_cohort'] = model_cohort
     return(grp_coefs)
 
 def _format_grp_coefs_matrix(extract, columns, grp_names):
