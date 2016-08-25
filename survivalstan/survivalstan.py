@@ -236,7 +236,7 @@ def _extract_grp_coefs(survival_fit, element, grp_coef_type, grp_names, columns,
                                                       grp_names=grp_names
                                                      )
         except:
-            grp_coefs_data = None
+            raise Exception('unable to format grp coefs as matrix')
     elif grp_coef_type == 'vector-of-vectors':
         try:
             grp_coefs_data = _format_grp_coefs_vectors(extract=grp_coefs_extract,
@@ -244,7 +244,7 @@ def _extract_grp_coefs(survival_fit, element, grp_coef_type, grp_names, columns,
                                                        grp_names=grp_names
                                                       )
         except:
-            grp_coefs_data = None
+            raise Exception('unable to format grp coefs as vector-of-vectors')
     elif grp_coef_type == 'unknown':
         print("warning: unable to determine group-coef orientation. Try using arg `grp_coef_type`")
         grp_coefs_data = None
@@ -260,7 +260,7 @@ def _extract_grp_coefs(survival_fit, element, grp_coef_type, grp_names, columns,
         grp_coefs['group'] = grp_coefs.group.astype('category')
         grp_coefs['model_cohort'] = model_cohort
     else:
-        raise Error('unable to extract group coefs')
+        raise Exception('grp_coefs_data does not exist')
     return(grp_coefs)
 
 def _format_grp_coefs_matrix(extract, columns, grp_names):
@@ -283,7 +283,7 @@ def _format_grp_coefs_vectors(extract, columns, grp_names):
     grp_coefs_data = list()
     i = 0
     for grp in grp_names:
-        grp_data = pd.DataFrame(grp_coefs_extract[:,i,:], columns = x_df.columns)
+        grp_data = pd.DataFrame(extract[:,i,:], columns = columns)
         grp_data.reset_index(inplace=True)
         grp_data.rename(columns={'index':'iter'}, inplace=True)
         grp_data['group'] = grp
