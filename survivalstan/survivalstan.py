@@ -224,7 +224,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
                 grp_coefs_data = pd.concat(grp_coefs_data)
                 grp_coefs = pd.melt(grp_coefs_data, id_vars=['group','iter'])
                 grp_coefs['exp(beta)'] = np.exp(grp_coefs['value'])
-                #grp_coefs['group'] = group_coefs.group.astype(category)
+                grp_coefs['group'] = grp_coefs.group.astype('category')
                 grp_coefs['model_cohort'] = model_cohort
             else:
                 grp_coefs = None
