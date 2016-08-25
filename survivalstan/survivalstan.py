@@ -168,6 +168,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
         beta_coefs.reset_index(0, inplace = True)
         beta_coefs = beta_coefs.rename(columns = {'index':'iter'})
         beta_coefs = pd.melt(beta_coefs, id_vars = ['iter'])
+        beta_coefs['exp(beta)'] = np.exp(beta_coefs['value'])
         beta_coefs['model_cohort'] = model_cohort
     except:
         beta_coefs = None
