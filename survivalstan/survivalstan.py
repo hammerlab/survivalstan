@@ -197,6 +197,8 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
                     i = 0
                     for grp in grp_names:
                         grp_data = pd.DataFrame(grp_coefs_extract[:,:,i], columns = x_df.columns)
+                        grp_data.reset_index(inplace=True)
+                        grp_data.rename(columns={'index':'iter'}, inplace=True)
                         grp_data['group'] = grp 
                         grp_coefs_data.append(grp_data)
                         i = i+1
@@ -208,6 +210,8 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
                     i = 0
                     for grp in grp_names:
                         grp_data = pd.DataFrame(grp_coefs_extract[:,i,:], columns = x_df.columns)
+                        grp_data.reset_index(inplace=True)
+                        grp_data.rename(columns={'index':'iter'}, inplace=True)
                         grp_data['group'] = grp 
                         grp_coefs_data.append(grp_data)
                         i = i+1
@@ -217,7 +221,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
                 grp_coefs_data = None
             if grp_coefs_data:
                 grp_coefs_data = pd.concat(grp_coefs_data)
-                grp_coefs = pd.melt(grp_coefs_data, id_vars='group')
+                grp_coefs = pd.melt(grp_coefs_data, id_vars=['group','iter'])
                 grp_coefs['model_cohort'] = model_cohort
             else:
                 grp_coefs = None
