@@ -12,6 +12,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
                              group_id_col = None, group_col = None,
                              timepoint_id_col = None, timepoint_end_col = None,
                              make_inits = None, stan_data = None,
+                             grp_coef_type = None,
                              *args, **kwargs):
     """This function prepares inputs appropriate for stan model model code, and fits that model using Stan.
 
@@ -31,6 +32,12 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
        timepoint_id_col (chr): name of column containing timepoint ids (1-indexed & sequential)
        timepoint_end_col (chr): name of column containing end times for each timepoint (will be converted to an ID)
        stan_data (dict): extra params passed to stan data object
+       grp_coef_type (chr): type of group coef specified, if using a varying-coef model
+              Can be one of:
+              - 'None' (default): guess group coef orientation from data. 
+                                  Works except in case where M (num covariates) == G (num groups)
+              - 'matrix': grp_beta defined as `matrix[M, G] grp_beta;`
+              - 'vector-of-vectors': grp_beta defined as `vector[M] grp_beta[G];`
 
     Returns:
        dictionary of results objects.  Contents::
@@ -182,52 +189,14 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
             else:
                 grp_names = df_nonmiss.loc[
                     ~df_nonmiss[[group_id_col]].duplicated()].sort_values(group_id_col)[group_id_col].values
-            grp_coefs_extract = survival_fit.extract()['grp_beta']
-            grp_coefs_data = list()
-            ## try to guess shape of group-betas
-            if survival_model_input_data['M'] == survival_model_input_data['G']:
-                # unable to determine shape if M == G
-                print("Warning: unable to determine group-coef orientation.")
-                grp_beta_orientation = 'unknown'
-            elif grp_coefs_extract.shape[1] == survival_model_input_data['G']:
-                grp_beta_orientation = 'vector-vector'
-            elif grp_coefs_extract.shape[2] == survival_model_input_data['G']:
-                grp_beta_orientation = 'matrix'
-            if grp_beta_orientation == 'matrix':
-                try:
-                    i = 0
-                    for grp in grp_names:
-                        grp_data = pd.DataFrame(grp_coefs_extract[:,:,i], columns = x_df.columns)
-                        grp_data.reset_index(inplace=True)
-                        grp_data.rename(columns={'index':'iter'}, inplace=True)
-                        grp_data['group'] = grp
-                        grp_coefs_data.append(grp_data)
-                        i = i+1
-                except:
-                    grp_coefs_data = None
-            elif grp_beta_orientation == 'vector-vector':
-                try:
-                    # alternate extraction method where group betas are vector of vectors
-                    i = 0
-                    for grp in grp_names:
-                        grp_data = pd.DataFrame(grp_coefs_extract[:,i,:], columns = x_df.columns)
-                        grp_data.reset_index(inplace=True)
-                        grp_data.rename(columns={'index':'iter'}, inplace=True)
-                        grp_data['group'] = grp
-                        grp_coefs_data.append(grp_data)
-                        i = i+1
-                except:
-                    grp_coefs_data = None
-            else:
-                grp_coefs_data = None
-            if grp_coefs_data:
-                grp_coefs_data = pd.concat(grp_coefs_data)
-                grp_coefs = pd.melt(grp_coefs_data, id_vars=['group','iter'])
-                grp_coefs['exp(beta)'] = np.exp(grp_coefs['value'])
-                grp_coefs['group'] = grp_coefs.group.astype('category')
-                grp_coefs['model_cohort'] = model_cohort
-            else:
-                grp_coefs = None
+            grp_coefs = _extract_grp_coefs(survival_fit=survival_fit,
+                                           element='grp_beta',
+                                           grp_coef_type=grp_coef_type,
+                                           grp_names=grp_names,
+                                           columns=x_df.columns,
+                                           input_data=survival_model_input_data,
+                                           model_cohort=model_cohort
+                                          )
         except:
             grp_coefs = None
     else:
@@ -248,6 +217,89 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
         'model_cohort': model_cohort,
     }
 
+
+def _extract_grp_coefs(survival_fit, element, grp_coef_type, grp_names, columns, input_data, model_cohort):
+    """ Helper function to extract grp coefs summary data
+    """
+    grp_coefs_extract = survival_fit.extract()[element]
+    
+    ## try to guess shape of group-betas
+    if not(grp_coef_type):
+        grp_coef_type = _guess_grp_coef_type(extract=grp_coefs_extract,
+                                             input_data=input_data)
+        
+    ## process group_coefs according to type
+    if grp_coef_type == 'matrix':
+        try:
+            grp_coefs_data = _format_grp_coefs_matrix(extract=grp_coefs_extract,
+                                                      columns=columns,
+                                                      grp_names=grp_names
+                                                     )
+        except:
+            raise Exception('unable to format grp coefs as matrix')
+    elif grp_coef_type == 'vector-of-vectors':
+        try:
+            grp_coefs_data = _format_grp_coefs_vectors(extract=grp_coefs_extract,
+                                                       columns=columns,
+                                                       grp_names=grp_names
+                                                      )
+        except:
+            raise Exception('unable to format grp coefs as vector-of-vectors')
+    elif grp_coef_type == 'unknown':
+        print("warning: unable to determine group-coef orientation. Try using arg `grp_coef_type`")
+        return(None)
+    else:
+        print("Invalid `grp_coef_type` -- must be one of 'vector-of-vectors' or 'matrix'")
+        print("Skipping grp coef extraction for now.")
+        return(None)
+    
+    # process/format grp_coefs data
+    grp_coefs = pd.melt(grp_coefs_data, id_vars=['group','iter'])
+    grp_coefs['exp(beta)'] = np.exp(grp_coefs['value'])
+    grp_coefs['group'] = grp_coefs.group.astype('category')
+    grp_coefs['model_cohort'] = model_cohort
+    return(grp_coefs)
+
+def _format_grp_coefs_matrix(extract, columns, grp_names):
+    """ Helper function for format grp_coefs data if in `matrix[M, G]` form
+    """
+    grp_coefs_data = list()
+    i = 0
+    for grp in grp_names:
+        grp_data = pd.DataFrame(extract[:,:,i], columns = columns)
+        grp_data.reset_index(inplace=True)
+        grp_data.rename(columns={'index':'iter'}, inplace=True)
+        grp_data['group'] = grp
+        grp_coefs_data.append(grp_data)
+        i = i+1
+    return(pd.concat(grp_coefs_data))
+
+def _format_grp_coefs_vectors(extract, columns, grp_names):
+    """ Helper function for format grp_coefs data if in `vector[M] grp_beta[G]` form
+    """
+    grp_coefs_data = list()
+    i = 0
+    for grp in grp_names:
+        grp_data = pd.DataFrame(extract[:,i,:], columns = columns)
+        grp_data.reset_index(inplace=True)
+        grp_data.rename(columns={'index':'iter'}, inplace=True)
+        grp_data['group'] = grp
+        grp_coefs_data.append(grp_data)
+        i = i+1
+    return(pd.concat(grp_coefs_data))
+    
+
+def _guess_grp_coef_type(extract, input_data):
+    """ helper function to determine grp_coefs type from shape of returned object
+    """
+    if input_data['M'] == input_data['G']:
+        # unable to determine shape if M == G
+        grp_coef_type = 'unknown'
+    elif extract.shape[1] == input_data['G']:
+        grp_coef_type = 'vector-of-vectors'
+    elif extract.shape[2] == input_data['G']:
+        grp_coef_type = 'matrix'
+    return grp_coef_type
 
 def _prep_timepoint_dataframe(df,
                               timepoint_end_col,
