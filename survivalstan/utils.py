@@ -230,7 +230,7 @@ def extract_params_long(models, element, rename_vars=None, varnames=None):
 
 
 def _extract_params_from_single_model(model, element, rename_vars=None, varnames=None):
-    if not varnames:
+    if varnames is None:
         df = pd.DataFrame(
             model['fit'].extract()[element]
         )
@@ -239,7 +239,7 @@ def _extract_params_from_single_model(model, element, rename_vars=None, varnames
             model['fit'].extract()[element]
             , columns=varnames
         )
-    if rename_vars:
+    if rename_vars is not None:
         df.rename(columns = rename_vars, inplace=True)
     df.reset_index(0, inplace = True)
     df = df.rename(columns = {'index':'iter'})
