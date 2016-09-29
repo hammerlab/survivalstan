@@ -69,6 +69,7 @@ def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_ha
     return pp_surv
 
 def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='survival', num_ticks=10, step_size=None, ticks_at=None, **kwargs):
+    pp_surv.sort_values([time_col, 'iter'], inplace=True)
     f, ax = plt.subplots(1, 1)
     if ticks_at is None:
         x_min = min(pp_surv[time_col].drop_duplicates())
