@@ -90,7 +90,7 @@ def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='surviva
     _ = plt.ylim([0, 1])
     _ = plt.xticks(rotation="vertical")
     _ = plt.xlabel('Days')
-    _ = plt.ylabel('Posterior Pred Survival %')
+    _ = plt.ylabel('Survival %')
     _ = plt.title('')
     _ = ax.xaxis.set_ticks(ticks_at)
     _ = ax.xaxis.set_ticklabels(
