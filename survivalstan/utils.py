@@ -71,6 +71,7 @@ def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_ha
     return pp_surv
 
 def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='survival', num_ticks=10, step_size=None, ticks_at=None, **kwargs):
+    pp_surv.sort_values([time_col, 'iter'], inplace=True)
     f, ax = plt.subplots(1, 1)
     if ticks_at is None:
         x_min = min(pp_surv[time_col].drop_duplicates())
@@ -107,7 +108,7 @@ def plot_pp_survival(models, time_element='y_hat_time', event_element='y_hat_eve
 
 def plot_observed_survival(df, event_col, time_col, *args, **kwargs):
     actual_surv = _summarize_survival(df=df, time_col=time_col, event_col=event_col)
-    plt.plot(actual_surv['event_at'], actual_surv['survival'], label='observed', *args, **kwargs)
+    plt.plot(actual_surv[event_col], actual_surv['survival'], label='observed', *args, **kwargs)
 
 def _list_files_in_path(path, pattern="*.stan"):
     """
