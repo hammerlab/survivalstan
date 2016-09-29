@@ -9,3 +9,4 @@ patsy
 nose>=1.3.3
 pylint>=1.4.4
 stanity>=0.1.2
+lifelines
