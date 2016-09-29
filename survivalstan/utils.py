@@ -41,12 +41,12 @@ def get_sample_ids(models, sample_col='patient_id'):
 
 def _prep_pp_data_single_model(model, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id'):
     patient_sample_ids = _get_sample_ids_single_model(model=model, sample_col=sample_col)
-    pp_event_time = survivalstan.utils.extract_params_long(models=[model],
+    pp_event_time = extract_params_long(models=[model],
                                                        element=time_element,
                                                        varnames=patient_sample_ids[sample_col].values,
                                                        )
     pp_event_time.rename(columns={'value': 'event_time', 'variable': sample_col}, inplace=True)
-    pp_event_status = survivalstan.utils.extract_params_long(models=[model],
+    pp_event_status = extract_params_long(models=[model],
                                                        element=event_element,
                                                        varnames=patient_sample_ids[sample_col].values,
                                                        )
@@ -56,9 +56,8 @@ def _prep_pp_data_single_model(model, time_element='y_hat_time', event_element='
 
 
 def prep_pp_data(models, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id'):
-    data = list()
-    for model in models:
-        data.append(_prep_pp_data_single_model(model=model, sample_col=sample_col, event_element=event_element, time_element=time_element)
+    data = [_prep_pp_data_single_model(model=model, sample_col=sample_col, event_element=event_element, time_element=time_element)
+            for model in models]
     return pd.concat(data)
 
 
