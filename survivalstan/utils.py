@@ -7,6 +7,105 @@ import matplotlib.pyplot as plt
 from survivalstan import extract_baseline_hazard
 import pandas as pd
 import numpy as np
+from lifelines.utils import survival_table_from_events
+
+def _summarize_survival(df, time_col, event_col, evaluate_at=None):
+    ## prepare survival table
+    table = survival_table_from_events(df[time_col], df[event_col])
+    table.reset_index(inplace=True)
+    ## normalize survival as fraction of initial_n
+    table['initial_n'] = table.loc[table['event_at'] == 0.0,'at_risk'][0]
+    table['survival'] = table.apply(lambda row: row['at_risk']/row['initial_n'], axis=1)
+    ## handle timepoints if given
+    if evaluate_at is not None:
+        evaluate_times = pd.DataFrame({'event_at': evaluate_at})
+        table = pd.merge(evaluate_times, table, on='event_at', how='outer')
+        table = table.sort_values('event_at').fillna(method='ffill')
+        table['keep'] = table['event_at'].apply(lambda x: x in evaluate_at)
+    else:
+        table['keep'] = True
+    table = table.loc[table['keep'] == True,['event_at','survival']]
+    return table
+
+
+def _get_sample_ids_single_model(model, sample_col='patient_id'):
+    patient_sample_ids = model['df'].loc[:,[sample_col,'sample_id']].drop_duplicates().sort_values('sample_id')
+    patient_sample_ids['model_cohort'] = model['model_cohort']
+    return patient_sample_ids
+
+
+def get_sample_ids(models, sample_col='patient_id'):
+    data = [_get_sample_ids_single_model(model=model, sample_col=sample_col) for model in models]
+    return pd.concat(data)
+
+
+def _prep_pp_data_single_model(model, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id'):
+    patient_sample_ids = _get_sample_ids_single_model(model=model, sample_col=sample_col)
+    pp_event_time = survivalstan.utils.extract_params_long(models=[model],
+                                                       element=time_element,
+                                                       varnames=patient_sample_ids[sample_col].values,
+                                                       )
+    pp_event_time.rename(columns={'value': 'event_time', 'variable': sample_col}, inplace=True)
+    pp_event_status = survivalstan.utils.extract_params_long(models=[model],
+                                                       element=event_element,
+                                                       varnames=patient_sample_ids[sample_col].values,
+                                                       )
+    pp_event_status.rename(columns={'value': 'event_status', 'variable': sample_col}, inplace=True)
+    pp_data = pd.merge(pp_event_time, pp_event_status, on=['iter', 'patient_id', 'model_cohort'])
+    return pp_data
+
+
+def prep_pp_data(models, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id'):
+    data = list()
+    for model in models:
+        data.append(_prep_pp_data_single_model(model=model, sample_col=sample_col, event_element=event_element, time_element=time_element)
+    return pd.concat(data)
+
+
+def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id'):
+    pp_data = prep_pp_data(models, time_element=time_element, event_element=event_element, sample_col=sample_col)
+    pp_surv = pp_data.groupby(['iter','model_cohort']).apply(
+         lambda df: _summarize_survival(df, time_col='event_time',event_col='event_status'))
+    return pp_surv
+
+def _plot_pp_survival_data(pp_surv, num_ticks=10, step_size=None, ticks_at=None, **kwargs):
+    f, ax = plt.subplots(1, 1)
+    if ticks_at is None:
+        x_min = min(pp_surv.event_at.drop_duplicates())
+        x_max = max(pp_surv.event_at.drop_duplicates())
+        if step_size is None:
+            step_size = (x_max - x_min)/num_ticks
+        ticks_at = np.arange(start=x_min, stop=x_max, step=step_size)
+    survival_plot = pp_surv.boxplot(
+        column='survival',
+        by='event_times',
+        whis=[2.5, 97.5],
+        positions=pp_surv.event_at.drop_duplicates(),
+        ax=ax,
+    )
+    f.suptitle('')
+    _ = plt.ylim([0, 1])
+    _ = plt.xticks(rotation="vertical")
+    _ = plt.xlabel('Days')
+    _ = plt.ylabel('Posterior Pred Survival %')
+    _ = plt.title('')
+    _ = ax.xaxis.set_ticks(ticks_at)
+    _ = ax.xaxis.set_ticklabels(
+         [r"%d" % (int(round(x))) for x in ticks_at])
+
+    if dict(**kwargs):
+        _ = plt.setp(survival_plot['survival']['boxes'], **kwargs)
+        _ = plt.setp(survival_plot['survival']['whiskers'], **kwargs)
+
+def plot_pp_survival(models, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id',
+                     num_ticks=10, step_size=None, ticks_at=None, **kwargs):
+    pp_surv = prep_pp_survival_data(models, time_element=time_element, event_element=event_element, sample_col=sample_col)
+    _plot_pp_survival_data(pp_surv, num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at, **kwargs)
+
+
+def plot_observed_survival(df, event_col, time_col, *args, **kwargs):
+    actual_surv = _summarize_survival(df=df, time_col=time_col, event_col=event_col)
+    plt.plot(actual_surv['event_at'], actual_surv['survival'], label='observed', *args, **kwargs)
 
 def _list_files_in_path(path, pattern="*.stan"):
     """
