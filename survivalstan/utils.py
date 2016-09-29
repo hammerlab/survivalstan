@@ -59,7 +59,9 @@ def _prep_pp_data_single_model(model, time_element='y_hat_time', event_element='
 def prep_pp_data(models, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id', event_col='event_status', time_col='event_time'):
     data = [_prep_pp_data_single_model(model=model, sample_col=sample_col, event_element=event_element, time_element=time_element, event_col=event_col, time_col=time_col)
             for model in models]
-    return pd.concat(data)
+    data = pd.concat(data)
+    data.sort_values([time_col,'iter'], inplace=True)
+    return data
 
 
 def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id', time_col='event_time', event_col='event_status'):
