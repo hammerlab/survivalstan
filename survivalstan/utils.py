@@ -41,7 +41,8 @@ def get_sample_ids(models, sample_col='patient_id'):
 
 
 def _prep_yhat_data_single_model(model, time_element='y_hat_time', event_element='y_hat_event',
-                                 time_col='event_time', event_col='event_status', varnames=None):
+                                 time_col='event_time', event_col='event_status', sample_col='patient_id',
+                                 varnames=None):
     pp_event_time = extract_params_long(models=[model],
                                         element=time_element,
                                         varnames=varnames,
