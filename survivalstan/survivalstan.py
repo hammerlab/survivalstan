@@ -167,6 +167,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
     
     survival_fit = FIT_FUN(
         model_code = model_code,
+        file = file,
         data = survival_model_input_data,
         *args,
         **kwargs
