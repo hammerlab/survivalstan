@@ -40,7 +40,8 @@ def get_sample_ids(models, sample_col='patient_id'):
     return pd.concat(data)
 
 
-def _prep_pp_data_single_model(model, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id', time_col='event_time', event_col='event_status'):
+def _prep_pp_data_single_model(model, time_element='y_hat_time', event_element='y_hat_event',
+                               sample_col='patient_id', time_col='event_time', event_col='event_status'):
     patient_sample_ids = _get_sample_ids_single_model(model=model, sample_col=sample_col)
     pp_event_time = extract_params_long(models=[model],
                                                        element=time_element,
@@ -56,7 +57,8 @@ def _prep_pp_data_single_model(model, time_element='y_hat_time', event_element='
     return pp_data
 
 
-def prep_pp_data(models, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id', event_col='event_status', time_col='event_time'):
+def prep_pp_data(models, time_element='y_hat_time', event_element='y_hat_event',
+                 sample_col='patient_id', event_col='event_status', time_col='event_time'):
     data = [_prep_pp_data_single_model(model=model, sample_col=sample_col, event_element=event_element, time_element=time_element, event_col=event_col, time_col=time_col)
             for model in models]
     data = pd.concat(data)
@@ -64,13 +66,15 @@ def prep_pp_data(models, time_element='y_hat_time', event_element='y_hat_event',
     return data
 
 
-def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id', time_col='event_time', event_col='event_status'):
+def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_hat_event',
+                          sample_col='patient_id', time_col='event_time', event_col='event_status'):
     pp_data = prep_pp_data(models, time_element=time_element, event_element=event_element, sample_col=sample_col, time_col=time_col, event_col=event_col)
     pp_surv = pp_data.groupby(['iter','model_cohort']).apply(
          lambda df: _summarize_survival(df, time_col=time_col, event_col=event_col))
     return pp_surv
 
-def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='survival', num_ticks=10, step_size=None, ticks_at=None, **kwargs):
+def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='survival',
+                           num_ticks=10, step_size=None, ticks_at=None, **kwargs):
     pp_surv.sort_values(time_col, inplace=True)
     f, ax = plt.subplots(1, 1)
     if ticks_at is None:
