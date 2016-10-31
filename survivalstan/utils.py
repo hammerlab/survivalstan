@@ -29,7 +29,7 @@ def _summarize_survival(df, time_col, event_col, evaluate_at=None):
     return table
 
 
-def _get_sample_ids_single_model(model, sample_col='patient_id'):
+def _get_sample_ids_single_model(model, sample_col='patient_id', data_df='df'):
     patient_sample_ids = model['df'].loc[:,[sample_col,'sample_id']].drop_duplicates().sort_values('sample_id')
     patient_sample_ids['model_cohort'] = model['model_cohort']
     return patient_sample_ids
@@ -40,26 +40,43 @@ def get_sample_ids(models, sample_col='patient_id'):
     return pd.concat(data)
 
 
-def _prep_pp_data_single_model(model, time_element='y_hat_time', event_element='y_hat_event',
-                               sample_col='patient_id', time_col='event_time', event_col='event_status'):
-    patient_sample_ids = _get_sample_ids_single_model(model=model, sample_col=sample_col)
+def _prep_yhat_data_single_model(model, time_element='y_hat_time', event_element='y_hat_event',
+                                 time_col='event_time', event_col='event_status', varnames=None):
     pp_event_time = extract_params_long(models=[model],
-                                                       element=time_element,
-                                                       varnames=patient_sample_ids[sample_col].values,
-                                                       )
+                                        element=time_element,
+                                        varnames=varnames,
+                                       )
     pp_event_time.rename(columns={'value': time_col, 'variable': sample_col}, inplace=True)
     pp_event_status = extract_params_long(models=[model],
-                                                       element=event_element,
-                                                       varnames=patient_sample_ids[sample_col].values,
-                                                       )
+                                          element=event_element,
+                                          varnames=varnames,
+                                         )
     pp_event_status.rename(columns={'value': event_col, 'variable': sample_col}, inplace=True)
     pp_data = pd.merge(pp_event_time, pp_event_status, on=['iter', sample_col, 'model_cohort'])
     return pp_data
 
 
+def _prep_pp_data_single_model(model, time_element='y_hat_time', event_element='y_hat_event',
+                               sample_col='patient_id', time_col='event_time', event_col='event_status',
+                              data_df='df'):
+    if sample_col:
+        patient_sample_ids = _get_sample_ids_single_model(model=model, sample_col=sample_col, data_df=data_df)
+        varnames = patient_sample_ids[sample_col].values
+    else:
+        varnames = None
+    pp_data = _prep_yhat_data_single_model(model=model,
+                                           event_element=event_element, 
+                                           time_element=time_element,
+                                           event_col=event_col,
+                                           time_col=time_col,
+                                           varnames=varnames)
+    return pp_data
+
+
 def prep_pp_data(models, time_element='y_hat_time', event_element='y_hat_event',
                  sample_col='patient_id', event_col='event_status', time_col='event_time'):
-    data = [_prep_pp_data_single_model(model=model, sample_col=sample_col, event_element=event_element, time_element=time_element, event_col=event_col, time_col=time_col)
+    data = [_prep_pp_data_single_model(model=model, sample_col=sample_col, event_element=event_element, 
+                                       time_element=time_element, event_col=event_col, time_col=time_col)
             for model in models]
     data = pd.concat(data)
     data.sort_values([time_col,'iter'], inplace=True)
@@ -68,10 +85,21 @@ def prep_pp_data(models, time_element='y_hat_time', event_element='y_hat_event',
 
 def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_hat_event',
                           sample_col='patient_id', time_col='event_time', event_col='event_status'):
-    pp_data = prep_pp_data(models, time_element=time_element, event_element=event_element, sample_col=sample_col, time_col=time_col, event_col=event_col)
+    pp_data = prep_pp_data(models, time_element=time_element, event_element=event_element,
+                           sample_col=sample_col, time_col=time_col, event_col=event_col)
     pp_surv = pp_data.groupby(['iter','model_cohort']).apply(
          lambda df: _summarize_survival(df, time_col=time_col, event_col=event_col))
     return pp_surv
+
+
+def prep_oos_survival_data(models, time_element='y_oos_time', event_element='y_oos_event',
+                          sample_col='sample_id', time_col='event_time', event_col='event_status'):
+    oos_data = prep_pp_data(models, time_element=time_element, event_element=event_element,
+                            sample_col=None, time_col=time_col, event_col=event_col)
+    oos_surv = oos_data.groupby(['iter','model_cohort']).apply(
+         lambda df: _summarize_survival(df, time_col=time_col, event_col=event_col))
+    return oos_surv
+
 
 def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='survival',
                            num_ticks=10, step_size=None, ticks_at=None, **kwargs):
@@ -106,7 +134,8 @@ def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='surviva
 
 def plot_pp_survival(models, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id',
                      num_ticks=10, step_size=None, ticks_at=None, time_col='event_time', event_col='event_status', **kwargs):
-    pp_surv = prep_pp_survival_data(models, time_element=time_element, event_element=event_element, sample_col=sample_col, time_col=time_col, event_col=event_col)
+    pp_surv = prep_pp_survival_data(models, time_element=time_element, event_element=event_element,
+                                    sample_col=sample_col, time_col=time_col, event_col=event_col)
     _plot_pp_survival_data(pp_surv, num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at, time_col=time_col, **kwargs)
 
 
