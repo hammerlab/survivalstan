@@ -3,6 +3,9 @@ import patsy
 import stanity
 import pandas as pd
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None,
@@ -118,10 +121,11 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
     
     ## prep oos dict if requested
     if predict_oos:
-        if len(x_df.index) > 0:
+        try:
             x2_data = x_df.drop_duplicates()
             s2 = len(x2_data.index)
-        else:
+        except:
+            logger.warning('unable to construct x2_data from x_df')
             x2_data = np.array(0, dims=[1, stan_data['M']])
             s2 = 1
     else:
