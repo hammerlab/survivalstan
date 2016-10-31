@@ -105,14 +105,9 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
 
     if len(x_df.columns)>1:
         x_df = x_df.ix[:, x_df.columns != 'Intercept']
+    elif len(x_df.columns)==1:
+        x_df['Intercept'] = 0
     
-    if predict_oos:
-        x2_data = x_df.drop_duplicates()
-        x2_len = len(x2_data.index)
-        x2_stan = dict(x2=x2_data, S2=x2_len)
-    else:
-        x2_stan = dict(S2=0, x2=np.empty(shape=[0, x_df.shape[1]]))
-
     ## prep input dictionary to pass to stan.fit
     survival_model_input_data = {
         'N': len(df_nonmiss.index),
@@ -120,7 +115,19 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
         'event': df_nonmiss[event_col].values.astype(int),
         'M': len(x_df.columns),
     }
-
+    
+    ## prep oos dict if requested
+    if predict_oos:
+        if len(x_df.index) > 0:
+            x2_data = x_df.drop_duplicates()
+            s2 = len(x2_data.index)
+        else:
+            x2_data = np.array(0, dims=[1, stan_data['M']])
+            s2 = 1
+    else:
+        x2_data = np.empty(shape=[0, stan_data['M']])
+        s2 = 0
+    x2_stan = dict(x2=x2_data, S2=s2)
     survival_model_input_data.update(x2_stan)
     
     if time_col:
