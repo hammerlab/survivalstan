@@ -29,7 +29,7 @@ def _summarize_survival(df, time_col, event_col, evaluate_at=None):
     return table
 
 
-def _get_sample_ids_single_model(model, sample_col='patient_id', data_df='df'):
+def _get_sample_ids_single_model(model, sample_col='patient_id'):
     patient_sample_ids = model['df'].loc[:,[sample_col,'sample_id']].drop_duplicates().sort_values('sample_id')
     patient_sample_ids['model_cohort'] = model['model_cohort']
     return patient_sample_ids
@@ -57,10 +57,10 @@ def _prep_yhat_data_single_model(model, time_element='y_hat_time', event_element
 
 
 def _prep_pp_data_single_model(model, time_element='y_hat_time', event_element='y_hat_event',
-                               sample_col='patient_id', time_col='event_time', event_col='event_status',
-                              data_df='df'):
-    if sample_col:
-        patient_sample_ids = _get_sample_ids_single_model(model=model, sample_col=sample_col, data_df=data_df)
+                               sample_col='patient_id', use_sample_id=True,
+                               time_col='event_time', event_col='event_status'):
+    if use_sample_id:
+        patient_sample_ids = _get_sample_ids_single_model(model=model, sample_col=sample_col)
         varnames = patient_sample_ids[sample_col].values
     else:
         varnames = None
@@ -69,6 +69,7 @@ def _prep_pp_data_single_model(model, time_element='y_hat_time', event_element='
                                            time_element=time_element,
                                            event_col=event_col,
                                            time_col=time_col,
+                                           sample_col=sample_col,
                                            varnames=varnames)
     return pp_data
 
@@ -93,9 +94,10 @@ def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_ha
 
 
 def prep_oos_survival_data(models, time_element='y_oos_time', event_element='y_oos_event',
-                          sample_col='sample_id', time_col='event_time', event_col='event_status'):
+                          time_col='event_time', event_col='event_status', sample_col='sample_id'):
     oos_data = prep_pp_data(models, time_element=time_element, event_element=event_element,
-                            sample_col=None, time_col=time_col, event_col=event_col)
+                            sample_col=sample_col, time_col=time_col, event_col=event_col,
+                            use_sample_id=False)
     oos_surv = oos_data.groupby(['iter','model_cohort']).apply(
          lambda df: _summarize_survival(df, time_col=time_col, event_col=event_col))
     return oos_surv
