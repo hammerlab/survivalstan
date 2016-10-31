@@ -13,6 +13,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
                              timepoint_id_col = None, timepoint_end_col = None,
                              make_inits = None, stan_data = None,
                              grp_coef_type = None, FIT_FUN = stanity.fit,
+                             predict_oos=False,
                              *args, **kwargs):
     """This function prepares inputs appropriate for stan model model code, and fits that model using Stan.
 
@@ -104,6 +105,13 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
 
     if len(x_df.columns)>1:
         x_df = x_df.ix[:, x_df.columns != 'Intercept']
+    
+    if predict_oos:
+        x2_data = x_df.drop_duplicates()
+        x2_len = len(x2_data.index)
+        x2_stan = dict(x2=x2_data, S2=x2_len)
+    else:
+        x2_stan = dict(S2=0, x2=np.empty(shape=[0, x_df.shape[1]]))
 
     ## prep input dictionary to pass to stan.fit
     survival_model_input_data = {
@@ -113,6 +121,8 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
         'M': len(x_df.columns),
     }
 
+    survival_model_input_data.update(x2_stan)
+    
     if time_col:
         survival_model_input_data['y'] = df_nonmiss[time_col].values
 
