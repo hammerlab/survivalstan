@@ -96,12 +96,21 @@ def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_ha
     return pp_surv
 
 
-def prep_oos_survival_data(models, time_element='y_oos_time', event_element='y_oos_event',
-                          time_col='event_time', event_col='event_status', sample_col='sample_id', 
-                           oos_data=None, by=None):
+def prep_oos_data(models, time_element='y_oos_time', event_element='y_oos_event',
+                          time_col='event_time', event_col='event_status', sample_col='sample_id'):
     oos_yhat = prep_pp_data(models, time_element=time_element, event_element=event_element,
                             sample_col=sample_col, time_col=time_col, event_col=event_col,
                             use_sample_id=False)
+    return oos_yhat
+
+
+def prep_oos_survival_data(models=None, oos_yhat=None, time_element='y_oos_time', event_element='y_oos_event',
+                          time_col='event_time', event_col='event_status', sample_col='sample_id', 
+                           oos_data=None, by=None):
+    if oos_yhat is None:
+        oos_yhat = prep_pp_data(models=models, time_element=time_element, event_element=event_element,
+                                sample_col=sample_col, time_col=time_col, event_col=event_col,
+                                use_sample_id=False)
     groupby_cols = ['iter', 'model_cohort']
     if by:
         if oos_data is None:
