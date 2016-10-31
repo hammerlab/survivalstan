@@ -107,9 +107,10 @@ def prep_oos_survival_data(models, time_element='y_oos_time', event_element='y_o
 
 
 def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='survival',
-                           num_ticks=10, step_size=None, ticks_at=None, **kwargs):
+                           num_ticks=10, step_size=None, ticks_at=None, f=None, ax=None, **kwargs):
     pp_surv.sort_values(time_col, inplace=True)
-    f, ax = plt.subplots(1, 1)
+    if f is None or ax is None:
+        f, ax = plt.subplots(1, 1)
     if ticks_at is None:
         x_min = min(pp_surv[time_col].drop_duplicates())
         x_max = max(pp_surv[time_col].drop_duplicates())
@@ -137,11 +138,19 @@ def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='surviva
         _ = plt.setp(survival_plot[survival_col]['boxes'], **kwargs)
         _ = plt.setp(survival_plot[survival_col]['whiskers'], **kwargs)
 
+        
 def plot_pp_survival(models, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id',
                      num_ticks=10, step_size=None, ticks_at=None, time_col='event_time', event_col='event_status', **kwargs):
     pp_surv = prep_pp_survival_data(models, time_element=time_element, event_element=event_element,
                                     sample_col=sample_col, time_col=time_col, event_col=event_col)
     _plot_pp_survival_data(pp_surv, num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at, time_col=time_col, **kwargs)
+
+    
+def plot_oos_survival(models, time_element='y_oos_time', event_element='y_oos_event', sample_col='sample_id',
+                     num_ticks=10, step_size=None, ticks_at=None, time_col='event_time', event_col='event_status', **kwargs):
+    oos_surv = prep_oos_survival_data(models, time_element=time_element, event_element=event_element,
+                                    sample_col=sample_col, time_col=time_col, event_col=event_col)
+    _plot_pp_survival_data(oos_surv, num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at, time_col=time_col, **kwargs)
 
 
 def plot_observed_survival(df, event_col, time_col, *args, **kwargs):
