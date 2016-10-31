@@ -16,7 +16,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
                              timepoint_id_col = None, timepoint_end_col = None,
                              make_inits = None, stan_data = None,
                              grp_coef_type = None, FIT_FUN = stanity.fit,
-                             predict_oos=False,
+                             predict_oos = False, oos_data = None,
                              *args, **kwargs):
     """This function prepares inputs appropriate for stan model model code, and fits that model using Stan.
 
@@ -121,17 +121,28 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
     
     ## prep oos dict if requested
     if predict_oos:
-        try:
-            x2_data = x_df.drop_duplicates()
-            s2 = len(x2_data.index)
-        except:
-            logger.warning('unable to construct x2_data from x_df')
-            x2_data = np.array(0, dims=[1, stan_data['M']])
-            s2 = 1
+        if oos_data is None:
+            try:
+                x2_df = x_df.drop_duplicates()
+                s2 = len(x2_df.index)
+            except:
+                logger.warning('unable to construct x2_df from x_df')
+                x2_df = np.array(0, dims=[1, stan_data['M']])
+                s2 = 1
+        else:
+            x2_df = patsy.dmatrix(formula,
+                                    oos_data,
+                                    return_type='dataframe'
+                                   )
+            if len(x2_df.columns)>1:
+                x2_df = x2_df.ix[:, x2_df.columns != 'Intercept']
+            elif len(x2_df.columns)==1:
+                x2_df['Intercept'] = 0
+            s2 = len(x2_df.index)
     else:
-        x2_data = np.empty(shape=[0, stan_data['M']])
+        x2_df = np.empty(shape=[0, stan_data['M']])
         s2 = 0
-    x2_stan = dict(x2=x2_data, S2=s2)
+    x2_stan = dict(x2=x2_df, S2=s2)
     survival_model_input_data.update(x2_stan)
     
     if time_col:
@@ -245,7 +256,9 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
     }
 
 
-def _extract_grp_coefs(survival_fit, element, grp_coef_type, grp_names, columns, input_data, model_cohort):
+def _extract_grp_coefs(survival_fit, element,
+                       grp_coef_type, grp_names, columns,
+                       input_data, model_cohort):
     """ Helper function to extract grp coefs summary data
     """
     grp_coefs_extract = survival_fit.extract()[element]
