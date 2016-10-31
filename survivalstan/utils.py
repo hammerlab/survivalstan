@@ -97,11 +97,20 @@ def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_ha
 
 
 def prep_oos_survival_data(models, time_element='y_oos_time', event_element='y_oos_event',
-                          time_col='event_time', event_col='event_status', sample_col='sample_id'):
-    oos_data = prep_pp_data(models, time_element=time_element, event_element=event_element,
+                          time_col='event_time', event_col='event_status', sample_col='sample_id', 
+                           oos_data=None, by=None):
+    oos_yhat = prep_pp_data(models, time_element=time_element, event_element=event_element,
                             sample_col=sample_col, time_col=time_col, event_col=event_col,
                             use_sample_id=False)
-    oos_surv = oos_data.groupby(['iter','model_cohort']).apply(
+    groupby_cols = ['iter', 'model_cohort']
+    if by:
+        if oos_data is None:
+            logger.info('Can\'t use `by` without giving `oos_data`.')
+            raise ValueError('Can\'t use `by` without giving `oos_data`.')
+        else:
+            groupby_cols.append(by)
+            oos_yhat = pd.merge(oos_yhat, oos_data.loc[:,[sample_col, by]], by=sample_col)
+    oos_surv = oos_yhat.groupby(groupby_cols).apply(
          lambda df: _summarize_survival(df, time_col=time_col, event_col=event_col))
     return oos_surv
 
@@ -156,6 +165,7 @@ def plot_oos_survival(models, time_element='y_oos_time', event_element='y_oos_ev
 def plot_observed_survival(df, event_col, time_col, *args, **kwargs):
     actual_surv = _summarize_survival(df=df, time_col=time_col, event_col=event_col)
     plt.plot(actual_surv[time_col], actual_surv['survival'], label='observed', *args, **kwargs)
+
 
 def _list_files_in_path(path, pattern="*.stan"):
     """
