@@ -109,14 +109,15 @@ def prep_oos_survival_data(models, time_element='y_oos_time', event_element='y_o
             raise ValueError('Can\'t use `by` without giving `oos_data`.')
         else:
             groupby_cols.append(by)
-            oos_yhat = pd.merge(oos_yhat, oos_data.loc[:,[sample_col, by]], by=sample_col)
+            oos_yhat = pd.merge(oos_yhat, oos_data.loc[:,[sample_col, by]], on=sample_col)
     oos_surv = oos_yhat.groupby(groupby_cols).apply(
          lambda df: _summarize_survival(df, time_col=time_col, event_col=event_col))
     return oos_surv
 
 
 def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='survival',
-                           num_ticks=10, step_size=None, ticks_at=None, f=None, ax=None, **kwargs):
+                           num_ticks=10, step_size=None, ticks_at=None, f=None, ax=None,
+                           label=None, **kwargs):
     pp_surv.sort_values(time_col, inplace=True)
     if f is None or ax is None:
         f, ax = plt.subplots(1, 1)
@@ -142,6 +143,8 @@ def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='surviva
     _ = ax.xaxis.set_ticks(ticks_at)
     _ = ax.xaxis.set_ticklabels(
          [r"%d" % (int(round(x))) for x in ticks_at])
+    if label:
+        _ = plt.set_label(label)
 
     if dict(**kwargs):
         _ = plt.setp(survival_plot[survival_col]['boxes'], **kwargs)
