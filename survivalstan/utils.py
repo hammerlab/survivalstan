@@ -126,7 +126,7 @@ def prep_oos_survival_data(models=None, oos_yhat=None, time_element='y_oos_time'
 
 def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='survival',
                            num_ticks=10, step_size=None, ticks_at=None, f=None, ax=None,
-                           label=None, **kwargs):
+                           label=None, ylabel='Survival %', **kwargs):
     pp_surv.sort_values(time_col, inplace=True)
     if f is None or ax is None:
         f, ax = plt.subplots(1, 1)
@@ -147,7 +147,7 @@ def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='surviva
     _ = plt.ylim([0, 1])
     _ = plt.xticks(rotation="vertical")
     _ = plt.xlabel('Days')
-    _ = plt.ylabel('Survival %')
+    _ = plt.ylabel(ylabel)
     _ = plt.title('')
     _ = ax.xaxis.set_ticks(ticks_at)
     _ = ax.xaxis.set_ticklabels(
@@ -174,9 +174,9 @@ def plot_oos_survival(models, time_element='y_oos_time', event_element='y_oos_ev
     _plot_pp_survival_data(oos_surv, num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at, time_col=time_col, **kwargs)
 
 
-def plot_observed_survival(df, event_col, time_col, *args, **kwargs):
+def plot_observed_survival(df, event_col, time_col, label='observed', *args, **kwargs):
     actual_surv = _summarize_survival(df=df, time_col=time_col, event_col=event_col)
-    plt.plot(actual_surv[time_col], actual_surv['survival'], label='observed', *args, **kwargs)
+    plt.plot(actual_surv[time_col], actual_surv['survival'], label=label, *args, **kwargs)
 
 
 def _list_files_in_path(path, pattern="*.stan"):
