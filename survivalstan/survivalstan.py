@@ -127,7 +127,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
                 s2 = len(x2_df.index)
             except:
                 logger.warning('unable to construct x2_df from x_df')
-                x2_df = np.array(0, dims=[1, stan_data['M']])
+                x2_df = np.array(0, dims=[1, survival_model_input_data['M']])
                 s2 = 1
         else:
             x2_df = patsy.dmatrix(formula,
@@ -140,7 +140,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
                 x2_df['Intercept'] = 0
             s2 = len(x2_df.index)
     else:
-        x2_df = np.empty(shape=[0, stan_data['M']])
+        x2_df = np.empty(shape=[0, survival_model_input_data['M']])
         s2 = 0
     x2_stan = dict(x2=x2_df, S2=s2)
     survival_model_input_data.update(x2_stan)
