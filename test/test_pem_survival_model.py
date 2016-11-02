@@ -3,6 +3,7 @@ import survivalstan
 from stancache import stancache
 import numpy as np
 from nose.tools import ok_
+from functools import partial
 num_iter = 10000
 from .test_datasets import load_test_dataset_long, sim_test_dataset_long
 
@@ -13,8 +14,7 @@ def test_pem_model_sim(force=True, **kwargs):
     ''' Test weibull survival model on simulated dataset
     '''
     dlong = sim_test_dataset_long()
-    testfit = stancache.cached_stan_fit(
-        survivalstan.fit_stan_survival_model,
+    testfit = survivalstan.fit_stan_survival_model(
         model_cohort = 'test model',
         model_code = model_code,
         df = dlong,
@@ -24,10 +24,9 @@ def test_pem_model_sim(force=True, **kwargs):
         formula = '~ 1',
         iter = num_iter,
         chains = 2,
+        FIT_FUN = partial(stancache.cached_stan_fit, force=force, **kwargs),
         seed = 9001,
-        force = force,
         make_inits = make_inits,
-        **kwargs
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
@@ -39,8 +38,7 @@ def test_pem_model(force=True, **kwargs):
     ''' Test survival model on test dataset
     '''
     dlong = load_test_dataset_long()
-    testfit = stancache.cached_stan_fit(
-        survivalstan.fit_stan_survival_model,
+    testfit = survivalstan.fit_stan_survival_model(
         model_cohort = 'test model',
         model_code = model_code,
         df = dlong,
@@ -50,10 +48,9 @@ def test_pem_model(force=True, **kwargs):
         formula = 'age + sex',
         iter = num_iter,
         chains = 2,
+        FIT_FUN = partial(stancache.cached_stan_fit, force=force, **kwargs),
         seed = 9001,
-        force = force,
         make_inits = make_inits,
-        **kwargs
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
@@ -64,8 +61,7 @@ def test_pem_null_model(force=True, **kwargs):
     ''' Test NULL survival model on flchain dataset
     '''
     dlong = load_test_dataset_long()
-    testfit = stancache.cached_stan_fit(
-        survivalstan.fit_stan_survival_model,
+    testfit = survivalstan.fit_stan_survival_model(
         model_cohort = 'test model',
         model_code = model_code,
         df = dlong,
@@ -75,10 +71,9 @@ def test_pem_null_model(force=True, **kwargs):
         formula = '~ 1',
         iter = num_iter,
         chains = 2,
+        FIT_FUN = partial(stancache.cached_stan_fit, force=force, **kwargs),
         seed = 9001,
-        force = force,
         make_inits = make_inits,
-        **kwargs
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)

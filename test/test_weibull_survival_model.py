@@ -2,6 +2,7 @@
 import survivalstan
 from stancache import stancache
 import numpy as np
+from functools import partial
 from nose.tools import ok_
 num_iter = 3000
 from .test_datasets import load_test_dataset, sim_test_dataset
@@ -13,7 +14,7 @@ def test_model_sim(force=True, **kwargs):
     ''' Test weibull survival model on simulated dataset
     '''
     d = sim_test_dataset()
-    testfit = stancache.cached_stan_fit(survivalstan.fit_stan_survival_model,
+    testfit = survivalstan.fit_stan_survival_model(
         model_cohort = 'test model',
         model_code = model_code,
         df = d,
