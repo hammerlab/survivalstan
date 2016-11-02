@@ -21,6 +21,11 @@ before_install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
+  # borrow following from http://github.com/stan-dev/rstan 
+  - echo -e "#\x21/bin/sh\n\$1 &\nPROCESS=\"\$!\"\nwhile :\ndo\n  RESULT=\`ps -p \${PROCESS} -o comm=\`" > wait4.sh
+  - echo -e "  if [ -z \"\${RESULT}\" ]; then\n    wait \${PROCESS}; exit \$?\n  else\n    echo \"-\"; sleep 10\n  fi\ndone\nexit \$?" >> wait4.sh
+  - more wait4.sh
+  - chmod 755 wait4.sh
 addons:
   apt:
     packages:
@@ -36,7 +41,7 @@ install:
   - pip install coveralls
 script:
   - ./lint.sh
-  - nosetests -w test -s --with-coverage --cover-package=survivalstan
+  - wait4.sh nosetests -w test -s --with-coverage --cover-package=survivalstan
 after_success:
   coveralls
 deploy:
