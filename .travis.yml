@@ -35,8 +35,8 @@ addons:
 install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy nose pandas matplotlib
   - source activate test-environment
-  - pip install pypandoc statsmodels
   - pip install -r requirements.txt
+  - pip install -r test_requirements.txt
   - pip install .
   - pip install coveralls
 script:
