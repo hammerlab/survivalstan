@@ -52,3 +52,4 @@ generated/
 
 ## sublime temp file
 .DS_Store
+.cached_models
