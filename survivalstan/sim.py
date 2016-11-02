@@ -55,7 +55,9 @@ def sim_data_exp_correlated(N, censor_time, rate_form = '1 + age + sex', rate_co
 
         N: (int) number of observations 
         censor_time: (float) uniform censor time for each observation
-    rate: (float, positive) hazard rate used to parameterize failure times
+        rate_form: names of variables to use when estimating rate. defaults to `'1 + age + sex'`
+        rate_coefs: inputs to rate-calc (coefs used to estimate log-rate). defaults to `[-3, 0.3, 0]`
+
 
     Returns
     -------
@@ -65,6 +67,9 @@ def sim_data_exp_correlated(N, censor_time, rate_form = '1 + age + sex', rate_co
       - t: observed failure/censor time, given censor_time
       - event: boolean indicating if failure event was observed (TRUE)
             or censored (FALSE)
+      - age: simulated age in years (poisson random variable, expectation = 55)
+      - sex: simulated sex, as 'female' or 'male' (uniform 50/50 split)
+      - rate: simulated rate value for each obs
     """
     sample_data = pd.DataFrame({
             'sex': ['female' if np.random.uniform()>0.5 else 'male' for i in np.arange(N)],
