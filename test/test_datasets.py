@@ -14,7 +14,7 @@ def load_test_dataset():
 
 
 def sim_test_dataset():
-    dataset = survivalstan.sim.sim_data_exp_correlated(N = 100, censor_time = 10, rate = 0.9)
+    dataset = survivalstan.sim.sim_data_exp_correlated(N = 200, censor_time = 10)
     dataset.reset_index(level = 0, inplace = True)
     return(dataset)
 
