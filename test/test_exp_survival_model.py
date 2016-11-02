@@ -47,7 +47,6 @@ def test_model(force=True, **kwargs):
         chains = 2,
         seed = 9001,
         FIT_FUN = partial(stancache.cached_stan_fit, force=force, **kwargs),
-        seed = 9001,
         make_inits = make_inits,
         )
     ok_('fit' in testfit)
@@ -70,7 +69,6 @@ def test_null_model(force=True, **kwargs):
         chains = 2,
         seed = 9001,
         FIT_FUN = partial(stancache.cached_stan_fit, force=force, **kwargs),
-        seed = 9001,
         make_inits = make_inits,
         )
     ok_('fit' in testfit)
