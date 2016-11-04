@@ -30,6 +30,8 @@ def test_model_sim(force=True, **kwargs):
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
     ok_('loo' in testfit)
+    survivalstan.utils.plot_coefs([testfit])
+    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit)
 
 
@@ -53,6 +55,8 @@ def test_model(force=True, **kwargs):
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
     ok_('loo' in testfit)
+    survivalstan.utils.plot_coefs([testfit])
+    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit) 
 
 
@@ -76,18 +80,7 @@ def test_null_model(force=True, **kwargs):
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
     ok_('loo' in testfit)
+    survivalstan.utils.plot_coefs([testfit])
+    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit)
 
-
-def test_plot_coefs():
-    ''' Test weibull survival model on simulated dataset
-    '''
-    testfit = test_model_sim(force=False)
-    survivalstan.utils.plot_coefs([testfit])
-
-
-def test_plot_coefs_exp():
-    ''' Test weibull survival model on simulated dataset
-    '''
-    testfit = test_model_sim(force=False, cache_only=True)
-    survivalstan.utils.plot_coefs([testfit], trans=np.exp)

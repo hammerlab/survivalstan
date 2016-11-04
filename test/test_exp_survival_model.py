@@ -30,6 +30,8 @@ def test_model_sim(**kwargs):
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
     ok_('loo' in testfit)
+    survivalstan.utils.plot_coefs([testfit])
+    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit)
 
 def test_model(**kwargs):
@@ -46,12 +48,14 @@ def test_model(**kwargs):
         iter = num_iter,
         chains = 2,
         seed = 9001,
-        FIT_FUN = partial(stancache.cached_stan_fit, **kwargs),
+        #FIT_FUN = partial(stancache.cached_stan_fit, **kwargs),
         make_inits = make_inits,
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
     ok_('loo' in testfit)
+    survivalstan.utils.plot_coefs([testfit])
+    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit)	
 
 def test_null_model(**kwargs):
@@ -68,26 +72,16 @@ def test_null_model(**kwargs):
         iter = num_iter,
         chains = 2,
         seed = 9001,
-        FIT_FUN = partial(stancache.cached_stan_fit, **kwargs),
+        #FIT_FUN = partial(stancache.cached_stan_fit, **kwargs),
         make_inits = make_inits,
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
     ok_('loo' in testfit)
+    survivalstan.utils.plot_coefs([testfit])
+    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit)
 
 
-def test_plot_coefs():
-    ''' Test plot_coefs with exp survival model
-    '''
-    testfit = test_model_sim()
-    survivalstan.utils.plot_coefs([testfit])
-
-
-def test_plot_coefs_exp():
-    ''' Test plot_coefs with exp survival model & np.exp transform
-    '''
-    testfit = test_model_sim()
-    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
 
 

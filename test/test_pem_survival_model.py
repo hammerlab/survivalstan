@@ -31,6 +31,9 @@ def test_pem_model_sim(force=True, **kwargs):
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
     ok_('loo' in testfit)
+    survivalstan.utils.plot_coefs([testfit])
+    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
+    survivalstan.utils.plot_coefs([testfit], element='baseline')
     return(testfit)
 
 
@@ -55,6 +58,9 @@ def test_pem_model(force=True, **kwargs):
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
     ok_('loo' in testfit)
+    survivalstan.utils.plot_coefs([testfit])
+    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
+    survivalstan.utils.plot_coefs([testfit], element='baseline')
     return(testfit) 
 
 def test_pem_null_model(force=True, **kwargs):
@@ -78,25 +84,9 @@ def test_pem_null_model(force=True, **kwargs):
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
     ok_('loo' in testfit)
+    survivalstan.utils.plot_coefs([testfit])
+    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
+    survivalstan.utils.plot_coefs([testfit], element='baseline')
     return(testfit)
 
-
-def test_plot_coefs():
-    ''' Test plot_coefs
-    '''
-    testfit = test_pem_model_sim(force=False, cache_only=True)
-    survivalstan.utils.plot_coefs([testfit])
-
-
-def test_plot_coefs_exp():
-    ''' Test plot_coefs with np.exp transform
-    '''
-    testfit = test_pem_model_sim(force=False, cache_only=True)
-    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
-
-def test_plot_baseline_hazard():
-    ''' Test plot_baseline_hazard
-    '''
-    testfit = test_pem_model_sim(force=False, cache_only=True)
-    survivalstan.utils.plot_coefs([testfit], element='baseline')
 
