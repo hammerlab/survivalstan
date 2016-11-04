@@ -10,7 +10,7 @@ from .test_datasets import load_test_dataset, sim_test_dataset
 model_code = survivalstan.models.exp_survival_model
 make_inits = None
 
-def test_model_sim(force=True, **kwargs):
+def test_model_sim(**kwargs):
     ''' Test survival model on simulated dataset
     '''
     d = sim_test_dataset()
@@ -23,7 +23,7 @@ def test_model_sim(force=True, **kwargs):
         formula = '~ 1',
         iter = num_iter,
         chains = 2,
-        FIT_FUN = partial(stancache.cached_stan_fit, force=force, **kwargs),
+        FIT_FUN = partial(stancache.cached_stan_fit, **kwargs),
         seed = 9001,
         make_inits = make_inits,
         )
@@ -32,7 +32,7 @@ def test_model_sim(force=True, **kwargs):
     ok_('loo' in testfit)
     return(testfit)
 
-def test_model(force=True, **kwargs):
+def test_model(**kwargs):
     ''' Test survival model on test dataset
     '''
     d = load_test_dataset()
@@ -46,7 +46,7 @@ def test_model(force=True, **kwargs):
         iter = num_iter,
         chains = 2,
         seed = 9001,
-        FIT_FUN = partial(stancache.cached_stan_fit, force=force, **kwargs),
+        FIT_FUN = partial(stancache.cached_stan_fit, **kwargs),
         make_inits = make_inits,
         )
     ok_('fit' in testfit)
@@ -54,7 +54,7 @@ def test_model(force=True, **kwargs):
     ok_('loo' in testfit)
     return(testfit)	
 
-def test_null_model(force=True, **kwargs):
+def test_null_model(**kwargs):
     ''' Test NULL survival model on flchain dataset
     '''
     d = load_test_dataset()
@@ -68,7 +68,7 @@ def test_null_model(force=True, **kwargs):
         iter = num_iter,
         chains = 2,
         seed = 9001,
-        FIT_FUN = partial(stancache.cached_stan_fit, force=force, **kwargs),
+        FIT_FUN = partial(stancache.cached_stan_fit, **kwargs),
         make_inits = make_inits,
         )
     ok_('fit' in testfit)
@@ -80,14 +80,14 @@ def test_null_model(force=True, **kwargs):
 def test_plot_coefs():
     ''' Test plot_coefs with exp survival model
     '''
-    testfit = test_model_sim(force=False, cache_only=True)
+    testfit = test_model_sim()
     survivalstan.utils.plot_coefs([testfit])
 
 
 def test_plot_coefs_exp():
     ''' Test plot_coefs with exp survival model & np.exp transform
     '''
-    testfit = test_model_sim(force=False, cache_only=True)
+    testfit = test_model_sim()
     survivalstan.utils.plot_coefs([testfit], trans=np.exp)
 
 
