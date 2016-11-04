@@ -1,4 +1,6 @@
 
+import matplotlib as mpl
+mpl.use('Agg')
 import survivalstan
 from stancache import stancache
 import numpy as np
