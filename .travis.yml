@@ -41,7 +41,7 @@ install:
   - pip install coveralls
 script:
   - ./lint.sh
-  - ./wait4.sh nosetests -w test --with-coverage --cover-package=survivalstan
+  - for f in `ls test/*.py`; do ./wait4.sh nosetests $f --with-coverage --cover-package=survivalstan; done
 after_success:
   coveralls
 deploy:
