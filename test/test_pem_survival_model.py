@@ -1,10 +1,12 @@
 
+import matplotlib as mpl
+mpl.use('Agg')
 import survivalstan
 from stancache import stancache
 import numpy as np
 from nose.tools import ok_
 from functools import partial
-num_iter = 500
+num_iter = 1000
 from .test_datasets import load_test_dataset_long, sim_test_dataset_long
 
 model_code = survivalstan.models.pem_survival_model
