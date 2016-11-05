@@ -15,7 +15,8 @@ make_inits = None
 def test_null_pem_model(**kwargs):
     ''' Test weibull survival model on simulated dataset
     '''
-    dlong = load_test_dataset_long()
+    d = load_test_dataset(n=20)
+    dlong = survivalstan.prep_data_long_surv(df=d, time_col='t', event_col='event')
     testfit = survivalstan.fit_stan_survival_model(
         model_cohort = 'test model',
         model_code = model_code,
@@ -38,6 +39,7 @@ def test_null_pem_model(**kwargs):
     survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     survivalstan.utils.plot_coefs([testfit], element='baseline')
     survivalstan.utils.plot_pp_survival([testfit])
+    survivalstan.utils.plot_observed_survival(df=d, time_col='t', event_col='event')
     return(testfit)
 
 
@@ -67,5 +69,6 @@ def test_pem_model(**kwargs):
     survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     survivalstan.utils.plot_coefs([testfit], element='baseline')
     survivalstan.utils.plot_pp_survival([testfit])
+    survivalstan.utils.plot_observed_survival(df=d, time_col='t', event_col='event')
     return(testfit)
 
