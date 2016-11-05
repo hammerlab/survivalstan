@@ -9,7 +9,7 @@ from nose.tools import ok_
 num_iter = 500
 from .test_datasets import load_test_dataset
 
-model_code = survivalstan.models.exp_survival_model
+model_code = survivalstan.models.weibull_survival_model
 make_inits = survivalstan.make_weibull_survival_model_inits
 
 def test_model(**kwargs):
