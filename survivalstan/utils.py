@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 from lifelines.utils import survival_table_from_events
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -374,6 +375,11 @@ def filter_stan_summary(stan_fit, pars=None, remove_nan=False):
 
 
     """
+    if isinstance(stan_fit, list):
+        if len(stan_fit)>1:
+            logger.warning('More than one model passed to `filter_stan_summary`. Using only the first.')
+        stan_fit = stan_fit[0]['fit']
+        ## else: assume stan_fit was passed correctly
     if pars:
         fitsum = stan_fit.summary(pars=pars)
     else:
