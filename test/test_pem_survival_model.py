@@ -40,6 +40,10 @@ def test_null_pem_model(**kwargs):
     survivalstan.utils.plot_coefs([testfit], element='baseline')
     survivalstan.utils.plot_pp_survival([testfit])
     survivalstan.utils.plot_observed_survival(df=d, time_col='t', event_col='event')
+    fitsum = survivalstan.utils.filter_stan_summary([testfit], pars='baseline')
+    fitsum = survivalstan.utils.filter_stan_summary(testfit['fit'], remove_nan=True)
+    survivalstan.utils.print_stan_summary([testfit], pars='lp__')
+    survivalstan.utils.plot_stan_summary([testfit], pars='log_baseline_raw')
     return(testfit)
 
 
