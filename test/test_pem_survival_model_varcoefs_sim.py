@@ -30,7 +30,7 @@ def test_pem_model(**kwargs):
         seed = 9001,
         make_inits = make_inits,
         FIT_FUN = stancache.cached_stan_fit,
-        **kwargs,
+        **kwargs
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
@@ -59,7 +59,7 @@ def test_pem_null_model(force=True, **kwargs):
         seed = 9001,
         make_inits = make_inits,
         FIT_FUN = stancache.cached_stan_fit,
-        **kwargs,
+        **kwargs
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
