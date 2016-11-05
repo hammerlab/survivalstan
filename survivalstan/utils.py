@@ -106,9 +106,9 @@ def plot_pp_survival(models, time_element='y_hat_time', event_element='y_hat_eve
     _plot_pp_survival_data(pp_surv, num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at, time_col=time_col, **kwargs)
 
 
-def plot_observed_survival(df, event_col, time_col, *args, **kwargs):
+def plot_observed_survival(df, event_col, time_col, label='observed', *args, **kwargs):
     actual_surv = _summarize_survival(df=df, time_col=time_col, event_col=event_col)
-    plt.plot(actual_surv[time_col], actual_surv['survival'], label='observed', *args, **kwargs)
+    plt.plot(actual_surv[time_col], actual_surv['survival'], label=label, *args, **kwargs)
 
 def _list_files_in_path(path, pattern="*.stan"):
     """
