@@ -25,9 +25,10 @@ def test_model_sim(**kwargs):
         formula = '~ 1',
         iter = num_iter,
         chains = 2,
-        FIT_FUN = partial(stancache.cached_stan_fit, **kwargs),
+        FIT_FUN = stancache.cached_stan_fit,
         seed = 9001,
         make_inits = make_inits,
+        **kwargs
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
@@ -36,7 +37,7 @@ def test_model_sim(**kwargs):
     survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit)
 
-def test_model(**kwargs):
+def test_model():
     ''' Test survival model on test dataset
     '''
     d = load_test_dataset()
@@ -50,8 +51,8 @@ def test_model(**kwargs):
         iter = num_iter,
         chains = 2,
         seed = 9001,
-        #FIT_FUN = partial(stancache.cached_stan_fit, **kwargs),
         make_inits = make_inits,
+        FIT_FUN = stancache.cached_stan_fit,
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
@@ -74,8 +75,8 @@ def test_null_model(**kwargs):
         iter = num_iter,
         chains = 2,
         seed = 9001,
-        #FIT_FUN = partial(stancache.cached_stan_fit, **kwargs),
         make_inits = make_inits,
+        FIT_FUN = stancache.cached_stan_fit,
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
