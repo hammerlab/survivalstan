@@ -6,9 +6,9 @@ from stancache import stancache
 import numpy as np
 from nose.tools import ok_
 from functools import partial
-num_iter = 500
 from .test_datasets import load_test_dataset_long, sim_test_dataset_long
 
+num_iter = 500
 model_code = survivalstan.models.pem_survival_model_varying_coefs
 make_inits = None
 
@@ -23,7 +23,7 @@ def test_pem_model(**kwargs):
         sample_col = 'index',
         timepoint_end_col = 'end_time',
         event_col = 'end_failure',
-        grp_col = 'sex',
+        group_col = 'sex',
         formula = '~ age',
         iter = num_iter,
         chains = 2,
@@ -52,7 +52,7 @@ def test_pem_null_model(force=True, **kwargs):
         sample_col = 'index',
         timepoint_end_col = 'end_time',
         event_col = 'end_failure',
-        grp_col = 'sex',
+        group_col = 'sex',
         formula = '~ 1',
         iter = num_iter,
         chains = 2,
