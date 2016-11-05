@@ -8,6 +8,9 @@ from survivalstan import extract_baseline_hazard
 import pandas as pd
 import numpy as np
 from lifelines.utils import survival_table_from_events
+import logging
+
+logger = logging.getLogger(__name__)
 
 def _summarize_survival(df, time_col, event_col, evaluate_at=None):
     ## prepare survival table
@@ -68,7 +71,7 @@ def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_ha
     pp_data = prep_pp_data(models, time_element=time_element, event_element=event_element, sample_col=sample_col, time_col=time_col, event_col=event_col)
     pp_surv = pp_data.groupby(['iter','model_cohort']).apply(
          lambda df: _summarize_survival(df, time_col=time_col, event_col=event_col))
-    return pp_surv
+    return pp_surv.reset_index()
 
 def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='survival', num_ticks=10, step_size=None, ticks_at=None, **kwargs):
     pp_surv.sort_values(time_col, inplace=True)
@@ -349,7 +352,8 @@ def _extract_params_from_single_model(model, element, rename_vars=None, varnames
     df['model_cohort'] = model['model_cohort']
     return(df)
 
-def filter_stan_summary(stan_fit, pars=None):
+
+def filter_stan_summary(stan_fit, pars=None, remove_nan=False):
     """ Filter stan fit summary, for the set of parameters in `pars`.
         See ?pystan.summary for details about summary stats given.
     
@@ -358,9 +362,11 @@ def filter_stan_summary(stan_fit, pars=None):
 
         stan_fit: 
             StanFit object for which posterior draws are desired to be summarized
-        pars: (optional)
+        pars: (list, optional)
             list of strings used to filter parameters. Passed directly to `pystan.summary`.
             default: return all parameters
+        remove_nan: (bool, optional)
+            whether to remove (and report on) NaN values for Rhat. These are problematic for distplot.
 
         Returns 
         -------
@@ -372,8 +378,15 @@ def filter_stan_summary(stan_fit, pars=None):
         fitsum = stan_fit.summary(pars=pars)
     else:
         fitsum = stan_fit.summary()
-    res = pd.DataFrame(fitsum['summary'], columns=fitsum['summary_colnames'], index=fitsum['summary_rownames'])
-    return res.loc[:,['mean','se_mean','sd','2.5%','50%','97.5%','Rhat']]
+    df = pd.DataFrame(fitsum['summary'], columns=fitsum['summary_colnames'], index=fitsum['summary_rownames'])
+    if remove_nan:
+        ## most of NaN values are Rhat
+        ## remove & report on their frequency if remove_nan == True
+        df_nan_rows = pd.isnull(df).any(1)
+        if any(df_nan_rows):
+            logger.info('Warning - {} rows removed due to NaN values for Rhat. This may indicate a problem in your model estimation.'.format(df_nan_rows[df_nan_rows].count()))
+            df = df[~df_nan_rows]
+    return df.loc[:,['mean','se_mean','sd','2.5%','50%','97.5%','Rhat']]
 
 
 def print_stan_summary(stan_fit, pars=None):
@@ -408,7 +421,7 @@ def plot_stan_summary(stan_fit, pars=None, metric='Rhat'):
             the name of the metric to plot, as one of: ['mean','se_mean','sd','2.5%','50%','97.5%','Rhat']
             default: `Rhat`
     """
-    df = filter_stan_summary(stan_fit=stan_fit, pars=pars)
+    df = filter_stan_summary(stan_fit=stan_fit, pars=pars, remove_nan=True)
     if not metric in df.columns:
         raise ValueError('Invalid metric ({}). Should be one of {}'.format(metric, '.'.join(df.columns)))
     sb.distplot(df[metric])
