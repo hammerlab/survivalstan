@@ -11,7 +11,7 @@ _exp_survival_path = os.path.join('stan', 'exp_survival_model.stan')
 
 # varying-coefs models
 _weibull_survival_varcoef_path = os.path.join('stan', 'weibull_survival_model_varying_coefs.stan')
-_pem_survival_varcoef_path = os.path.join('stan', 'pem_survival_model_varying_coefs.stan')
+_pem_survival_varcoef_path = os.path.join('stan', 'pem_survival_model_unstructured_varcoefs.stan')
 
 pem_survival_model = pkg_resources.resource_string(
 	resource_package, _pem_survival_unstructured_path).decode("utf-8") 
