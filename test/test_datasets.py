@@ -7,7 +7,7 @@ def load_test_dataset(n=50):
     ''' Load test dataset from R survival package
     '''
     dataset = statsmodels.datasets.get_rdataset(package='survival', dataname='flchain' )
-    d  = dataset.data.query('futime > 7').sample(n=n)
+    d = dataset.data.query('futime > 7').sample(n=n)
     d.reset_index(level=0, inplace=True)
     d.rename(columns={'futime': 't', 'death': 'event'}, inplace=True)
     return(d)
@@ -15,7 +15,6 @@ def load_test_dataset(n=50):
 
 def sim_test_dataset(n=50):
     dataset = survivalstan.sim.sim_data_exp_correlated(N=n, censor_time=10)
-    dataset.reset_index(level=0, inplace=True)
     return(dataset)
 
 
