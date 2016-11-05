@@ -72,7 +72,9 @@ def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_ha
     pp_data = prep_pp_data(models, time_element=time_element, event_element=event_element, sample_col=sample_col, time_col=time_col, event_col=event_col)
     pp_surv = pp_data.groupby(['iter','model_cohort']).apply(
          lambda df: _summarize_survival(df, time_col=time_col, event_col=event_col))
-    return pp_surv.reset_index()
+    pp_surv.reset_index(inplace=True)
+    pp_surv.rename(columns={'level_2': sample_col}, inplace=True)
+    return pp_surv
 
 def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='survival', num_ticks=10, step_size=None, ticks_at=None, **kwargs):
     pp_surv.sort_values(time_col, inplace=True)
