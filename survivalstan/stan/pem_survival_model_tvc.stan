@@ -143,13 +143,13 @@ model {
 }
 generated quantities {
   real log_lik[N];
-  vector[T] baseline_raw;
+  vector[T] baseline;
   int y_hat_mat[S, T];     // ppcheck for each S*T combination
   real y_hat_time[S];      // predicted failure time for each sample
   int y_hat_event[S];      // predicted event (0:censor, 1:event)
   
   // compute raw baseline hazard, for summary/plotting
-  baseline_raw = exp(log_baseline_raw);
+  baseline = exp(log_baseline_raw);
   
   // log_likelihood for loo-psis
   for (n in 1:N) {
