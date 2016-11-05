@@ -12,10 +12,10 @@ from .test_datasets import load_test_dataset_long, sim_test_dataset_long
 model_code = survivalstan.models.pem_survival_model
 make_inits = None
 
-def test_pem_model_sim(**kwargs):
+def test_null_pem_model(**kwargs):
     ''' Test weibull survival model on simulated dataset
     '''
-    dlong = sim_test_dataset_long()
+    dlong = load_test_dataset_long()
     testfit = survivalstan.fit_stan_survival_model(
         model_cohort = 'test model',
         model_code = model_code,
@@ -40,10 +40,10 @@ def test_pem_model_sim(**kwargs):
     return(testfit)
 
 
-def test_pem_model_sim_covar(**kwargs):
+def test_pem_model(**kwargs):
     ''' Test weibull survival model on simulated dataset
     '''
-    dlong = sim_test_dataset_long()
+    dlong = load_test_dataset_long()
     testfit = survivalstan.fit_stan_survival_model(
         model_cohort = 'test model',
         model_code = model_code,
