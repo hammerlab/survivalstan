@@ -66,10 +66,10 @@ model {
 generated quantities {
   real log_lik[N];
   //int yhat_uncens[N];
-  vector[T] baseline_raw;
+  vector[T] baseline;
   
   // compute raw baseline hazard, for summary/plotting
-  baseline_raw = exp(log_baseline_raw);
+  baseline = exp(log_baseline_raw);
   
   // prepare yhat_uncens & log_lik
   for (n in 1:N) {
