@@ -113,7 +113,7 @@ generated quantities {
               
               // determine predicted value of this sample's hazard
               n = n_trans[samp, tp];
-              log_haz = log_baseline[tp] + x[n,] * beta[coef];
+              log_haz = log_baseline[tp] + x[n,] * beta;
               
               // now, make posterior prediction of an event at this tp
               if (log_haz < log(pow(2, 30))) 
