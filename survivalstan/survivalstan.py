@@ -5,14 +5,14 @@ import pandas as pd
 import numpy as np
 
 
-def fit_stan_survival_model(df, formula, event_col, model_code,
+def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None,
                                            model_cohort = 'survival model', 
                              time_col = None,
                              sample_id_col = None, sample_col = None,
                              group_id_col = None, group_col = None,
                              timepoint_id_col = None, timepoint_end_col = None,
                              make_inits = None, stan_data = None,
-                             grp_coef_type = None,
+                             grp_coef_type = None, FIT_FUN = stanity.fit,
                              *args, **kwargs):
     """This function prepares inputs appropriate for stan model model code, and fits that model using Stan.
 
@@ -21,6 +21,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
        formula (chr): Patsy formula to use for covariates. E.g 'met_status + pd_l1'
        event_col (chr): name of column containing event status. Will be coerced to int
        model_code (chr): stan model code to use.
+       file (chr): path to stan file (if model_code not given).
 
     Kwargs:
        model_cohort (chr): description of this model fit, to be used when plotting or summarizing output
@@ -74,6 +75,10 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
 
     """
 
+    if model_code is None:
+        if file is None:
+            raise AttributeError('Either model_code or file is required.')
+    
     ## input covariates given formula
     x_df = patsy.dmatrix(formula,
                           df,
@@ -160,8 +165,9 @@ def fit_stan_survival_model(df, formula, event_col, model_code,
     if make_inits:
         kwargs = dict(kwargs, init = make_inits(survival_model_input_data))
     
-    survival_fit = stanity.fit(
+    survival_fit = FIT_FUN(
         model_code = model_code,
+        file = file,
         data = survival_model_input_data,
         *args,
         **kwargs
