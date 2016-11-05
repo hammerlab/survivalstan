@@ -6,7 +6,7 @@ cache:
     - $HOME/.cached_models
 python:
   - "2.7"
-  #- "3.4"
+  - "3.4"
 env:
   - TEST=test/test_exp_survival_model.py
   - TEST=test/test_exp_survival_model_sim.py
