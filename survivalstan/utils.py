@@ -349,3 +349,66 @@ def _extract_params_from_single_model(model, element, rename_vars=None, varnames
     df['model_cohort'] = model['model_cohort']
     return(df)
 
+def filter_stan_summary(stan_fit, pars=None):
+    """ Filter stan fit summary, for the set of parameters in `pars`.
+        See ?pystan.summary for details about summary stats given.
+    
+        Parameters
+        -------
+
+        stan_fit: 
+            StanFit object for which posterior draws are desired to be summarized
+        pars: (optional)
+            list of strings used to filter parameters. Passed directly to `pystan.summary`.
+            default: return all parameters
+
+        Returns 
+        -------
+        pandas dataframe containing summary stats for posterior draws of selected parameters
+
+
+    """
+    if pars:
+        fitsum = stan_fit.summary(pars=pars)
+    else:
+        fitsum = stan_fit.summary()
+    res = pd.DataFrame(fitsum['summary'], columns=fitsum['summary_colnames'], index=fitsum['summary_rownames'])
+    return res.loc[:,['mean','se_mean','sd','2.5%','50%','97.5%','Rhat']]
+
+
+def print_stan_summary(stan_fit, pars=None):
+    """ Convenience function to print stan fit summary, for the set of parameters in `pars`.
+
+        Parameters
+        -------
+
+        stan_fit: 
+            StanFit object for which posterior draws are desired to be summarized
+        pars: (optional)
+            list of strings used to filter parameters. Passed directly to `pystan.summary`.
+            default: return all parameters
+    """
+    print(filter_stan_summary(stan_fit=stan_fit, pars=pars).to_string())
+
+
+def plot_stan_summary(stan_fit, pars=None, metric='Rhat'):
+    """ Plot distribution of values in stan fit summary, for the set of parameters in `pars`.
+
+        Primary use case is to summarize Rhat estimates for set of parameters, as a quick check of convergence.
+
+        Parameters
+        -------
+
+        stan_fit: 
+            StanFit object for which posterior draws are desired to be summarized
+        pars: (list of str, optional)
+            list of strings used to filter parameters. Passed directly to `pystan.summary`.
+            default: return all parameters
+        metric: (str, optional)
+            the name of the metric to plot, as one of: ['mean','se_mean','sd','2.5%','50%','97.5%','Rhat']
+            default: `Rhat`
+    """
+    df = filter_stan_summary(stan_fit=stan_fit, pars=pars)
+    if not metric in df.columns:
+        raise ValueError('Invalid metric ({}). Should be one of {}'.format(metric, '.'.join(df.columns)))
+    sb.distplot(df[metric])
