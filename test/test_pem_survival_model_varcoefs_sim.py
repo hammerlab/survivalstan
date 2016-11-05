@@ -15,7 +15,7 @@ make_inits = None
 def test_pem_model(**kwargs):
     ''' Test survival model on test dataset
     '''
-    dlong = load_test_dataset_long()
+    dlong = sim_test_dataset_long()
     testfit = survivalstan.fit_stan_survival_model(
         model_cohort = 'test model',
         model_code = model_code,
@@ -44,7 +44,7 @@ def test_pem_model(**kwargs):
 def test_pem_null_model(force=True, **kwargs):
     ''' Test NULL survival model on flchain dataset
     '''
-    dlong = load_test_dataset_long()
+    dlong = sim_test_dataset_long()
     testfit = survivalstan.fit_stan_survival_model(
         model_cohort = 'test model',
         model_code = model_code,
