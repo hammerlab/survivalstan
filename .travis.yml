@@ -1,6 +1,7 @@
 sudo: false  # Use container-based infrastructure
 language: python
-cache: pip
+cache: 
+  pip: True
 python:
   - "2.7"
   #- "3.4"
