@@ -150,7 +150,7 @@ def _get_color_palette(n):
 def plot_pp_survival(models, time_element='y_hat_time', event_element='y_hat_event',
                      num_ticks=10, step_size=None, ticks_at=None, time_col='event_time',
                      event_col='event_status', fill=True, by=None, alpha=0.5, pal=None,
-                     **kwargs):
+                     subplot=None, **kwargs):
     pp_surv = prep_pp_survival_data(models, time_element=time_element,
                                     event_element=event_element, time_col=time_col,
                                     event_col=event_col, by=by)
@@ -160,7 +160,8 @@ def plot_pp_survival(models, time_element='y_hat_time', event_element='y_hat_eve
             pal = _get_color_palette(num_grps)
         legend_handles = list()
         i = 0
-        subplot = plt.subplots(1, 1)
+        if not subplot:
+            subplot = plt.subplots(1, 1)
         for grp, df in pp_surv.groupby(by):
             _plot_pp_survival_data(df.copy(), num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
                                   time_col=time_col, color=pal[i], subplot=subplot, alpha=alpha, fill=fill, **kwargs)
