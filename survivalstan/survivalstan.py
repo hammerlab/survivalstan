@@ -211,6 +211,11 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
 
     loo = stanity.psisloo(survival_fit.extract()['log_lik'])
     
+    if not sample_id_col:
+        sample_id_col = None
+    if not sample_col:
+        sample_col = None
+    
     return {
         'df': df_nonmiss,
         'x_df': x_df,
@@ -221,6 +226,9 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
         'grp_coefs': grp_coefs,
         'loo': loo,
         'model_cohort': model_cohort,
+        'df_all': df,
+        'sample_col': sample_col,
+        'sample_id_col': sample_id_col
     }
 
 
