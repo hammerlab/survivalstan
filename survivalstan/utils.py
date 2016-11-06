@@ -10,6 +10,7 @@ import numpy as np
 from lifelines.utils import survival_table_from_events
 import logging
 import re
+import matplotlib.patches as mpatches
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +34,16 @@ def _summarize_survival(df, time_col, event_col, evaluate_at=None):
     return table
 
 
-def _get_sample_ids_single_model(model, sample_col='patient_id'):
-    patient_sample_ids = model['df'].loc[:,[sample_col,'sample_id']].drop_duplicates().sort_values('sample_id')
+def _get_sample_ids_single_model(model, sample_col=None, sample_id_col=None):
+    if not sample_col:
+        sample_col = model['sample_col']
+        if not sample_col:
+            raise ValueError('sample_col was not given and is also not provided to the model. This is a required input')
+    if not sample_id_col:
+        sample_id_col = model['sample_id_col']
+        if not sample_id_col:
+            raise ValueError('sample_id_col was not given and is also not provided to the model. This is a required input')
+    patient_sample_ids = model['df'].loc[:,[sample_col, sample_id_col]].drop_duplicates().sort_values(sample_id_col)
     patient_sample_ids['model_cohort'] = model['model_cohort']
     return patient_sample_ids
 
@@ -44,41 +53,58 @@ def get_sample_ids(models, sample_col='patient_id'):
     return pd.concat(data)
 
 
-def _prep_pp_data_single_model(model, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id', time_col='event_time', event_col='event_status'):
-    patient_sample_ids = _get_sample_ids_single_model(model=model, sample_col=sample_col)
+def _prep_pp_data_single_model(model, time_element='y_hat_time', event_element='y_hat_event',
+                               sample_col=None, time_col='event_time', event_col='event_status',
+                               join_with='df_all', sample_id_col=None):
+    patient_sample_ids = _get_sample_ids_single_model(model=model, sample_col=sample_col, sample_id_col=sample_id_col)
+    if not sample_col:
+        sample_col = model['sample_col']
     pp_event_time = extract_params_long(models=[model],
-                                                       element=time_element,
-                                                       varnames=patient_sample_ids[sample_col].values,
-                                                       )
+                                       element=time_element,
+                                       varnames=patient_sample_ids[sample_col].values,
+                                       )
     pp_event_time.rename(columns={'value': time_col, 'variable': sample_col}, inplace=True)
     pp_event_status = extract_params_long(models=[model],
-                                                       element=event_element,
-                                                       varnames=patient_sample_ids[sample_col].values,
-                                                       )
+                                       element=event_element,
+                                       varnames=patient_sample_ids[sample_col].values,
+                                       )
     pp_event_status.rename(columns={'value': event_col, 'variable': sample_col}, inplace=True)
     pp_data = pd.merge(pp_event_time, pp_event_status, on=['iter', sample_col, 'model_cohort'])
+    if join_with:
+            pp_data = pd.merge(pp_data, model[join_with], on=sample_col, suffixes=['','_original'])
     return pp_data
 
 
-def prep_pp_data(models, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id', event_col='event_status', time_col='event_time'):
-    data = [_prep_pp_data_single_model(model=model, sample_col=sample_col, event_element=event_element, time_element=time_element, event_col=event_col, time_col=time_col)
+def prep_pp_data(models, time_element='y_hat_time', event_element='y_hat_event', event_col='event_status', time_col='event_time', **kwargs):
+    data = [_prep_pp_data_single_model(model=model, event_element=event_element, time_element=time_element, event_col=event_col, time_col=time_col, **kwargs)
             for model in models]
     data = pd.concat(data)
-    data.sort_values([time_col,'iter'], inplace=True)
+    data.sort_values([time_col, 'iter'], inplace=True)
     return data
 
 
-def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id', time_col='event_time', event_col='event_status'):
-    pp_data = prep_pp_data(models, time_element=time_element, event_element=event_element, sample_col=sample_col, time_col=time_col, event_col=event_col)
-    pp_surv = pp_data.groupby(['iter','model_cohort']).apply(
+def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_hat_event',
+                         time_col='event_time', event_col='event_status',
+                         by=None,
+                         **kwargs):
+    pp_data = prep_pp_data(models, time_element=time_element, event_element=event_element, time_col=time_col, event_col=event_col, **kwargs)
+    groups = ['iter', 'model_cohort']
+    if by:
+        groups.append(by)
+    pp_surv = pp_data.groupby(groups).apply(
          lambda df: _summarize_survival(df, time_col=time_col, event_col=event_col))
     pp_surv.reset_index(inplace=True)
-    pp_surv.rename(columns={'level_2': sample_col}, inplace=True)
     return pp_surv
 
-def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='survival', num_ticks=10, step_size=None, ticks_at=None, **kwargs):
+def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='survival',
+                           num_ticks=10, step_size=None, ticks_at=None, subplot=None,
+                           ylabel='Survival %', xlabel='Days', label='posterior predictions',
+                           fill=True, **kwargs):
     pp_surv.sort_values(time_col, inplace=True)
-    f, ax = plt.subplots(1, 1)
+    if not subplot:
+        f, ax = plt.subplots(1, 1)
+    else:
+        f, ax = subplot
     if ticks_at is None:
         x_min = min(pp_surv[time_col].drop_duplicates())
         x_max = max(pp_surv[time_col].drop_duplicates())
@@ -91,12 +117,15 @@ def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='surviva
         whis=[2.5, 97.5],
         positions=pp_surv[time_col].drop_duplicates(),
         ax=ax,
+        return_type='dict',
+        showcaps=False,
+        patch_artist=fill,
     )
     f.suptitle('')
     _ = plt.ylim([0, 1])
     _ = plt.xticks(rotation="vertical")
-    _ = plt.xlabel('Days')
-    _ = plt.ylabel('Survival %')
+    _ = plt.xlabel(xlabel)
+    _ = plt.ylabel(ylabel)
     _ = plt.title('')
     _ = ax.xaxis.set_ticks(ticks_at)
     _ = ax.xaxis.set_ticklabels(
@@ -104,12 +133,44 @@ def _plot_pp_survival_data(pp_surv, time_col='event_time', survival_col='surviva
 
     if dict(**kwargs):
         _ = plt.setp(survival_plot[survival_col]['boxes'], **kwargs)
+        _ = plt.setp(survival_plot[survival_col]['medians'], **kwargs)
         _ = plt.setp(survival_plot[survival_col]['whiskers'], **kwargs)
 
-def plot_pp_survival(models, time_element='y_hat_time', event_element='y_hat_event', sample_col='patient_id',
-                     num_ticks=10, step_size=None, ticks_at=None, time_col='event_time', event_col='event_status', **kwargs):
-    pp_surv = prep_pp_survival_data(models, time_element=time_element, event_element=event_element, sample_col=sample_col, time_col=time_col, event_col=event_col)
-    _plot_pp_survival_data(pp_surv, num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at, time_col=time_col, **kwargs)
+
+def _get_color_palette(n):
+    """ Pick a color palette given number of values
+        Returns an array containing color inputs for each value
+    """
+    if n <= 4:
+        color_list = plt.cm.Set1(np.linspace(0, 1, n))
+    else:
+        color_list = plt.cm.viridis(np.linspace(0, 1, n))
+    return color_list
+
+def plot_pp_survival(models, time_element='y_hat_time', event_element='y_hat_event',
+                     num_ticks=10, step_size=None, ticks_at=None, time_col='event_time',
+                     event_col='event_status', fill=True, by=None, alpha=0.5, pal=None,
+                     **kwargs):
+    pp_surv = prep_pp_survival_data(models, time_element=time_element,
+                                    event_element=event_element, time_col=time_col,
+                                    event_col=event_col, by=by)
+    if by:
+        if not pal:
+            num_grps = len(pp_surv.drop_duplicates(subset=by)[by].values)
+            pal = _get_color_palette(num_grps)
+        legend_handles = list()
+        i = 0
+        subplot = plt.subplots(1, 1)
+        for grp, df in pp_surv.groupby(by):
+            _plot_pp_survival_data(df.copy(), num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
+                                  time_col=time_col, color=pal[i], subplot=subplot, alpha=alpha, fill=fill, **kwargs)
+            legend_handles.append(mpatches.Patch(color=pal[i], label=grp))
+            i = i+1
+        plt.legend(handles=legend_handles)
+        plt.show()
+    else:
+        _plot_pp_survival_data(pp_surv, num_ticks=num_ticks, step_size=step_size,
+                               ticks_at=ticks_at, time_col=time_col, alpha=alpha, fill=fill, **kwargs)
 
 
 def plot_observed_survival(df, event_col, time_col, label='observed', *args, **kwargs):
