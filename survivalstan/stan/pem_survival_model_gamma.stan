@@ -62,30 +62,30 @@ transformed data {
   }
 }
 parameters {
-  vector<lower=0>[T] baseline; // unstructured baseline hazard for each timepoint t
+  vector<lower=0>[T] baseline_raw; // unstructured baseline hazard for each timepoint t
   vector[M] beta; // beta for each covariate
   real<lower=0> c_raw;
   real<lower=0> r_raw;
 }
 transformed parameters {
   vector[N] log_hazard;
-  vector[T] log_baseline;
+  vector[T] log_baseline_raw;
   real<lower=0> c;
   real<lower=0> r;
   
   
-  log_baseline = log(baseline);
+  log_baseline_raw = log(baseline_raw);
   
   r = r_unit*r_raw;
   c = c_unit*c_raw;
   
   for (n in 1:N) {
-    log_hazard[n] = x[n,]*beta + log_baseline[t[n]];
+    log_hazard[n] = x[n,]*beta + log_baseline_raw[t[n]];
   }
 }
 model {
   for (i in 1:T) {
-      baseline[i] ~ gamma(r * t_dur[i] * c, c);
+      baseline_raw[i] ~ gamma(r * t_dur[i] * c, c);
   }
   beta ~ cauchy(0, 2);
   event ~ poisson_log(log_hazard);
@@ -94,10 +94,15 @@ model {
 }
 generated quantities {
   real log_lik[N];
+  vector[T] log_baseline;
+  vector[T] baseline;
   int y_hat_mat[S, T]; // ppcheck for each S*T combination
   real y_hat_time[S];       // predicted failure time for each sample
   int y_hat_event[S];      // predicted event (0:censor, 1:event)
   
+  log_baseline = log_baseline_raw - to_vector(t_dur);
+  baseline = exp(log_baseline);
+
   // log-likelihood, for loo
   for (n in 1:N) {
       log_lik[n] = poisson_log_lpmf(event[n] | log_hazard[n]);
