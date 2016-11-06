@@ -6,6 +6,7 @@ find survivalstan test -name '*.py' \
             --errors-only \
             --disable=print-statement \
             --extension-pkg-whitelist=numpy \
-            --extension-pkg-whitelist=patsy
+            --extension-pkg-whitelist=patsy \
+            --extension-pkg-whitelist=matplotlib
 
 echo 'Passes pylint check'
