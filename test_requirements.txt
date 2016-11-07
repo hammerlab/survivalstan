@@ -1,0 +1,3 @@
+git+git://github.com/jburos/stancache
+statsmodels
+pypandoc

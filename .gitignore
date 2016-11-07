@@ -49,6 +49,8 @@ venv
 cache
 ENV.sh
 generated/
+*.ipynb
 
 ## sublime temp file
 .DS_Store
+.cached_models
