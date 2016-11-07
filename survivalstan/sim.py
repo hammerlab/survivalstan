@@ -38,6 +38,7 @@ def sim_data_exp(N, censor_time, rate):
     sample_data['event'] = sample_data['t'] >= sample_data['true_t']
     sample_data['sex'] = ['female' if np.random.uniform()>0.5 else 'male' for i in np.arange(N)]
     sample_data['age'] = np.random.poisson(55, N)
+    sample_data['index'] = np.arange(N)
     return(sample_data)
 
 
@@ -81,5 +82,6 @@ def sim_data_exp_correlated(N, censor_time, rate_form = '1 + age + sex', rate_co
     sample_data['true_t'] = sample_data['rate'].apply(lambda rate: np.random.exponential(1/rate))
     sample_data['t'] = np.minimum(sample_data['true_t'], censor_time)
     sample_data['event'] = sample_data['t'] >= sample_data['true_t']
+    sample_data['index'] = np.arange(N)
     return(sample_data)
 
