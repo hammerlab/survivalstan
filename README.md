@@ -20,7 +20,7 @@ Once we push this repo to pypi, you will be able to install using pip, as:
     $ pip install survivalstan ## (not yet set up)
 
 
-For now, please clone the repo:
+Or, you can clone the repo:
 
     $ git clone https://github.com/hammerlab/survivalstan.git
     $ pip install .
@@ -28,10 +28,16 @@ For now, please clone the repo:
 Contributing
 ------------
 
-TBD
+Details to come. For now, please do not hesitate to contribute if you would like. 
 
 Example
 -------
+
+There are several examples included in the [example-notebooks](), roughly one corresponding to each model.
+
+If you are not sure where to start, [Test pem_survival_model with simulated data.ipynb](https://github.com/hammerlab/survivalstan/blob/master/example-notebooks/Test%20pem_survival_model%20with%20simulated%20data.ipynb) contains the most explanatory text. Many of the other notebooks are sparse on explanation, but do illustrate variations on the different models.
+
+For basic usage:
 
 ```
 import survivalstan
@@ -60,6 +66,9 @@ testfit_wei = survivalstan.fit_stan_survival_model(
 
 ## coefplot for Weibull coefficient estimates
 sb.boxplot(x = 'value', y = 'variable', data = testfit_wei['coefs'])
+
+## or, use plot_coefs
+survivalstan.utils.plot_coefs([testfit_wei])
 
 ## print summary of MCMC draws from posterior for each parameter
 print(testfit_wei['fit'])
@@ -92,6 +101,10 @@ stanity.loo_compare(testfit_wei['loo'], testfit_pem['loo'])
 sb.boxplot(x = 'value', y = 'variable', hue = 'model_cohort',
     data = testfit_pem['coefs'].append(testfit_wei['coefs']))
 plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+
+## (or, use survivalstan.utils.plot_coefs)
+survivalstan.utils.plot_coefs([testfit_wei, testfit_pem])
+
 ```
 
 
