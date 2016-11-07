@@ -31,7 +31,7 @@ Installation / Usage
 
 Once we push this repo to pypi, you will be able to install using pip, as:
 
-    $ pip install survivalstan ## (not yet set up)
+    $ pip install survivalstan
 
 
 Or, you can clone the repo:
