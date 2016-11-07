@@ -19,11 +19,12 @@ Features:
 	- PEM models with variety of baseline hazards
 	- PEM model with varying-coefficients (by group)
 	- PEM model with time-varying-effects
-* Extensible framework - bring your own Stan code , or edit the models above
+* Extensible framework - bring your own Stan code, or edit the models above
 * Works with [pandas](http://pandas.pydata.org) data frames & [patsy](https://pypi.python.org/pypi/patsy) formulas
 * Graphical posterior predictive checking (currently PEM models only)
 * Plot posterior estimates of key parameters using [seaborn](https://pypi.python.org/pypi/seaborn)
-* Annotated draws of posterior estimates as [pandas](http://pandas.pydata.org) dataframes for summary and manipulation
+* Helper functions to format posterior draws of estimates as [pandas](http://pandas.pydata.org) dataframes
+* Works with extensions to [pystan](https://pystan.readthedocs.io/en/latest/), such as [stancache](http://github.com/jburos/stancache) or [pystan-cache](https://github.com/paulkernfeld/pystan-cache)
 
 Installation / Usage
 --------------------
