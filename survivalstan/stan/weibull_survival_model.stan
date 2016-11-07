@@ -44,7 +44,7 @@ parameters {
 
 transformed parameters {
   vector[M] beta;
-  real alpha;
+  real<lower=0> alpha;
   vector[N] lp;
 
   beta <- bg_prior_lp(tau_s_raw, tau_raw) .* beta_raw;
