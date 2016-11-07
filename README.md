@@ -12,6 +12,19 @@ Overview
 
 Library of Stan Models for Survival Analysis
 
+Features:
+
+* Variety of standard survival models
+	- Weibull, Exponential, and Gamma parameterization
+	- PEM models with variety of baseline hazards
+	- PEM model with varying-coefficients (by group)
+	- PEM model with time-varying-effects
+* Extensible framework - bring your own Stan code , or edit the models above
+* Works with [pandas](http://pandas.pydata.org) data frames & [patsy](https://pypi.python.org/pypi/patsy) formulas
+* Graphical posterior predictive checking (currently PEM models only)
+* Plot posterior estimates of key parameters using [seaborn](https://pypi.python.org/pypi/seaborn)
+* Annotated draws of posterior estimates as [pandas](http://pandas.pydata.org) dataframes for summary and manipulation
+
 Installation / Usage
 --------------------
 
@@ -93,6 +106,12 @@ print(testfit_pem['fit'])
 
 ## coefplot for PEM model results
 sb.boxplot(x = 'value', y = 'variable', data = testfit_pem['coefs'])
+
+## plot baseline hazard (only PEM models)
+survivalstan.utils.plot_coefs([testfit_pem], element='baseline')
+
+## posterior-predictive checking (only PEM models)
+survivalstan.utils.plot_pp_survival([testfit_pem])
 
 ## e.g. compare models using PSIS-LOO
 stanity.loo_compare(testfit_wei['loo'], testfit_pem['loo'])
