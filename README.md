@@ -29,7 +29,7 @@ Features:
 Installation / Usage
 --------------------
 
-Once we push this repo to pypi, you will be able to install using pip, as:
+Install using pip, as:
 
     $ pip install survivalstan
 
@@ -44,12 +44,12 @@ Contributing
 
 Details to come. For now, please do not hesitate to contribute if you would like. 
 
-Example
+Usage examples
 -------
 
-There are several examples included in the [example-notebooks](), roughly one corresponding to each model.
+There are several examples included in the [example-notebooks](http://nbviewer.jupyter.org/github/hammerlab/survivalstan/tree/master/example-notebooks/), roughly one corresponding to each model.
 
-If you are not sure where to start, [Test pem_survival_model with simulated data.ipynb](https://github.com/hammerlab/survivalstan/blob/master/example-notebooks/Test%20pem_survival_model%20with%20simulated%20data.ipynb) contains the most explanatory text. Many of the other notebooks are sparse on explanation, but do illustrate variations on the different models.
+If you are not sure where to start, [Test pem_survival_model with simulated data.ipynb](http://nbviewer.jupyter.org/github/hammerlab/survivalstan/blob/master/example-notebooks/Test%20pem_survival_model%20with%20simulated%20data.ipynb) contains the most explanatory text. Many of the other notebooks are sparse on explanation, but do illustrate variations on the different models.
 
 For basic usage:
 
