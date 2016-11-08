@@ -80,7 +80,7 @@ parameters {
   real log_baseline_mu;
   
   vector[M] beta; // beta-intercept
-  vector[M] beta_time_sigma;
+  vector<lower=0>[M] beta_time_sigma;
   vector[T-1] raw_beta_time_deltas[M]; // for each coefficient
                                        // change in coefficient value from previous time
 }
