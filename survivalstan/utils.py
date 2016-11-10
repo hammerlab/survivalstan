@@ -34,6 +34,26 @@ def _summarize_survival(df, time_col, event_col, evaluate_at=None):
     return table
 
 
+def extract_time_betas(models, element='beta_time', value_name='beta', **kwargs):
+    data = [_extract_time_betas_single_model(model) for model in models]
+    return pd.concat(data)
+
+def _extract_time_betas_single_model(stanmodel, element='beta_time', value_name='beta', timepoint_id_col=None, timepoint_end_col=None):
+    if not timepoint_id_col:
+        timepoint_id_col = stanmodel['timepoint_id_col']
+    if not timepoint_end_col:
+        timepoint_end_col = stanmodel['timepoint_end_col']
+    if not timepoint_id_col or not timepoint_end_col:
+        raise ValueError('timepoint_id_col and timepoint_end_col are required, but were either not given or were not set by stan model')
+    time_betas = stanmodel['fit'].extract()[element]
+    time_betas = pd.DataFrame(time_betas[:,0,:])
+    time_betas = pd.melt(time_betas, var_name=timepoint_id_col, value_name=value_name)
+    timepoint_data = stanmodel['df'].loc[:,[timepoint_id_col, timepoint_end_col]].drop_duplicates()
+    time_betas = pd.merge(time_betas, timepoint_data, on=timepoint_id_col)
+    time_betas['exp({})'.format(value_name)] = np.exp(time_betas[value_name])
+    time_betas['model_cohort'] = stanmodel['model_cohort']
+    return(time_betas)
+
 def _get_sample_ids_single_model(model, sample_col=None, sample_id_col=None):
     if not sample_col:
         sample_col = model['sample_col']
