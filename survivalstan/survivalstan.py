@@ -207,9 +207,13 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
             grp_coefs = None
     else:
         grp_coefs = beta_coefs
-        grp_coefs['group'] = 'Overall'
+        if grp_coefs is not None:
+            grp_coefs['group'] = 'Overall'
 
-    loo = stanity.psisloo(survival_fit.extract()['log_lik'])
+    try:
+        loo = stanity.psisloo(survival_fit.extract()['log_lik'])
+    except:
+        loo = None
     
     if not sample_id_col:
         sample_id_col = None
