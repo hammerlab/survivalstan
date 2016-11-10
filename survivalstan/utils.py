@@ -34,7 +34,11 @@ def _summarize_survival(df, time_col, event_col, evaluate_at=None):
     return table
 
 
-def extract_time_betas(stanmodel, element='beta_time', value_name='beta', timepoint_id_col=None, timepoint_end_col=None):
+def extract_time_betas(models, element='beta_time', value_name='beta', **kwargs):
+    data = [_extract_time_betas_single_model(model) for model in models]
+    return pd.concat(data)
+
+def _extract_time_betas_single_model(stanmodel, element='beta_time', value_name='beta', timepoint_id_col=None, timepoint_end_col=None):
     if not timepoint_id_col:
         timepoint_id_col = stanmodel['timepoint_id_col']
     if not timepoint_end_col:
