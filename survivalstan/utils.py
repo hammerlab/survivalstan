@@ -34,7 +34,7 @@ def _summarize_survival(df, time_col, event_col, evaluate_at=None):
     return table
 
 
-def extract_time_betas(stanmodel, bins=20, element='beta_time', value_name='beta', timepoint_id_col=None, timepoint_end_col=None):
+def extract_time_betas(stanmodel, element='beta_time', value_name='beta', timepoint_id_col=None, timepoint_end_col=None):
     if not timepoint_id_col:
         timepoint_id_col = stanmodel['timepoint_id_col']
     if not timepoint_end_col:
@@ -48,18 +48,6 @@ def extract_time_betas(stanmodel, bins=20, element='beta_time', value_name='beta
     time_betas = pd.merge(time_betas, timepoint_data, on=timepoint_id_col)
     time_betas['exp({})'.format(value_name)] = np.exp(time_betas[value_name])
     time_betas['model_cohort'] = stanmodel['model_cohort']
-    time_betas['alt_timepoints'] = pd.cut(time_betas[timepoint_end_col],
-                                          bins=bins,
-                                          precision=0,
-                                         )
-    time_betas['alt_log_timepoints'] = pd.cut(np.log(time_betas[timepoint_end_col]),
-                                             bins=bins,
-                                             precision=1,
-                                             )
-    rename_log_timepoints = np.exp(time_betas['alt_log_timepoints'].cat.categories.str.extract(', ([\d\.]+)\]', expand=False).astype(float)).astype(int)
-    rename_timepoints = time_betas['alt_timepoints'].cat.categories.str.extract(', ([\d\.]+)\]', expand=False).astype(float).astype(int)
-    time_betas['alt_timepoint_end'] = time_betas['alt_timepoints'].cat.rename_categories(rename_timepoints)
-    time_betas['alt_log_timepoint_end'] = time_betas['alt_log_timepoints'].cat.rename_categories(rename_log_timepoints)
     return(time_betas)
 
 def _get_sample_ids_single_model(model, sample_col=None, sample_id_col=None):
