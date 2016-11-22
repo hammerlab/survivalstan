@@ -13,6 +13,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
                              timepoint_id_col = None, timepoint_end_col = None,
                              make_inits = None, stan_data = None,
                              grp_coef_type = None, FIT_FUN = stanity.fit,
+                             drop_intercept = True,
                              *args, **kwargs):
     """This function prepares inputs appropriate for stan model model code, and fits that model using Stan.
 
@@ -39,6 +40,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
                                   Works except in case where M (num covariates) == G (num groups)
               - 'matrix': grp_beta defined as `matrix[M, G] grp_beta;`
               - 'vector-of-vectors': grp_beta defined as `vector[M] grp_beta[G];`
+       drop_intercept (bool): whether to drop the intercept term from the model matrix (default: True)
 
     Returns:
        dictionary of results objects.  Contents::
@@ -102,7 +104,7 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
     else:
         df_nonmiss = x_df
 
-    if len(x_df.columns)>1:
+    if len(x_df.columns)>1 and drop_intercept:
         x_df = x_df.ix[:, x_df.columns != 'Intercept']
 
     ## prep input dictionary to pass to stan.fit
