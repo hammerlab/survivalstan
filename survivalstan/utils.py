@@ -172,6 +172,11 @@ def plot_time_betas(models=None, tb_data=None, element='beta_time',
         tb_data = extract_time_betas(models=models, element=element, coefs=coefs,
                                      value_name=value_name, timepoint_id_col=timepoint_id_col,
                                      timepoint_end_col=timepoint_end_col)
+        timepoint_id_col, timepoint_end_col = _get_timepoint_cols(models=models,
+                                                              timepoint_id_col=timepoint_id_col,
+                                                              timepoint_end_col=timepoint_end_col)
+        logger.debug('timepoint_id_col set to {}'.format(timepoint_id_col))
+        logger.debug('timepoint_end_col set to {}'.format(timepoint_end_col))
     if by:
         if not pal:
             num_grps = len(tb_data.drop_duplicates(subset=by).loc[:, by].values)
@@ -181,7 +186,9 @@ def plot_time_betas(models=None, tb_data=None, element='beta_time',
         if not subplot:
             subplot = plt.subplots(1, 1)
         for grp, df in tb_data.groupby(by):
-            _plot_time_betas(tb_data=df.copy(), num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
+            _plot_time_betas(tb_data=df.copy(),
+                             timepoint_id_col=timepoint_id_col, timepoint_end_col=timepoint_end_col,
+                             num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
                              x=x, y=y, color=pal[i], subplot=subplot, alpha=alpha, fill=fill, **kwargs)
             legend_handles.append(mpatches.Patch(color=pal[i], label=grp))
             i = i+1
@@ -189,6 +196,7 @@ def plot_time_betas(models=None, tb_data=None, element='beta_time',
         plt.show()
     else:
         _plot_time_betas(tb_data=tb_data, num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
+                         timepoint_id_col=timepoint_id_col, timepoint_end_col=timepoint_end_col,
                          x=x, y=y, subplot=subplot, alpha=alpha, fill=fill, **kwargs)
 
 def _get_sample_ids_single_model(model, sample_col=None, sample_id_col=None):
