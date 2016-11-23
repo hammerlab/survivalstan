@@ -35,7 +35,7 @@ def _summarize_survival(df, time_col, event_col, evaluate_at=None):
 
 
 def extract_time_betas(models, element='beta_time', value_name='beta', **kwargs):
-    data = [_extract_time_betas_single_model(model) for model in models]
+    data = [_extract_time_betas_single_model(model, element=element, value_name=value_name, **kwargs) for model in models]
     return pd.concat(data)
 
 def _extract_time_betas_single_model(stanmodel, element='beta_time', coefs=None,
@@ -50,7 +50,7 @@ def _extract_time_betas_single_model(stanmodel, element='beta_time', coefs=None,
     time_betas = stanmodel['fit'].extract()[element]
     
     # determine coef names
-    coef_names = stanmodel['x_names']
+    coef_names = list(stanmodel['x_names'])
     num_coefs = time_betas.shape[1]
     if len(coef_names) != num_coefs:
         raise ValueError('Num coefs does not equal number of coef names. Please report this as a bug')
@@ -59,7 +59,7 @@ def _extract_time_betas_single_model(stanmodel, element='beta_time', coefs=None,
     # determine which coefs to extract
     plot_coefs = list(np.arange(num_coefs))
     if coefs is not None:
-        plot_coefs = [i for i in plot_coefs if coef_names[i] in coefs]
+        plot_coefs = [val for val in plot_coefs if coef_names[val] in coefs]
     logger.debug('plot_coefs set to {}'.format(','.join(str(plot_coefs))))
     
     # extract time-betas for each coef
