@@ -78,13 +78,13 @@ def _extract_time_betas_single_model(stanmodel, element='beta_time', coefs=None,
 
 def _get_timepoint_cols(models, timepoint_id_col, timepoint_end_col):
     if not timepoint_id_col:
-        timepoint_id_col = unique([model['timepoint_id_col'] for model in models])
+        timepoint_id_col = np.unique([model['timepoint_id_col'] for model in models])
         if len(timepoint_id_col)>1:
             ValueError('timepoint_id_col is not uniform for all models. Please reformat data and set timepoint_id_col manually')
         elif len(timepoint_id_col)==1:
             timepoint_id_col = timepoint_id_col[0]
     if not timepoint_end_col:
-        timepoint_end_col = unique([model['timepoint_end_col'] for model in models])
+        timepoint_end_col = np.unique([model['timepoint_end_col'] for model in models])
         if len(timepoint_end_col)>1:
             ValueError('timepoint_end_col is not uniform for all models. Please reformat data and set timepoint_end_col manually')
         elif len(timepoint_end_col)==1:
