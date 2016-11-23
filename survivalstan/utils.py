@@ -93,14 +93,14 @@ def _get_timepoint_cols(models, timepoint_id_col, timepoint_end_col):
         raise ValueError('timepoint_id_col and timepoint_end_col are required, but were either not given or were not set by model')
     return (timepoint_id_col, timepoint_end_col)
     
-def _plot_time_betas(models=None, tb_data=None, element='beta_time',
+def _plot_time_betas(models=None, df=None, element='beta_time',
                      coefs=None, y='exp(beta)', ylabel=None, 
                      timepoint_id_col=None, timepoint_end_col=None,
                      x='timepoint_end_col', xlabel='time', 
                      subplot=None, ticks_at=None, num_ticks=10, step_size=None,
                      fill=True, value_name='beta', ylim=None, **kwargs):
-    if tb_data is None:
-        tb_data = extract_time_betas(models=models, element=element, coefs=coefs,
+    if df is None:
+        df = extract_time_betas(models=models, element=element, coefs=coefs,
                                      value_name=value_name, timepoint_id_col=timepoint_id_col,
                                      timepoint_end_col=timepoint_end_col)
         timepoint_id_col, timepoint_end_col = _get_timepoint_cols(models=models,
@@ -126,22 +126,22 @@ def _plot_time_betas(models=None, tb_data=None, element='beta_time',
             ylabel = '{}'.format(y)
         else:
             ylabel = '{} for {}'.format(y, coefs[0])
-    tb_data.sort_values(time_col, inplace=True)
+    df.sort_values(time_col, inplace=True)
     if not subplot:
         f, ax = plt.subplots(1, 1)
     else:
         f, ax = subplot
     if ticks_at is None:
-        x_min = min(tb_data[time_col].drop_duplicates())
-        x_max = max(tb_data[time_col].drop_duplicates())
+        x_min = min(df[time_col].drop_duplicates())
+        x_max = max(df[time_col].drop_duplicates())
         if step_size is None:
             step_size = (x_max - x_min)/num_ticks
         ticks_at = np.arange(start=x_min, stop=x_max, step=step_size)
-    time_beta_plot = tb_data.boxplot(
+    time_beta_plot = df.boxplot(
         column=y,
         by=time_col,
         whis=[2.5, 97.5],
-        positions=tb_data[time_col].drop_duplicates(),
+        positions=df[time_col].drop_duplicates(),
         ax=ax,
         return_type='dict',
         showcaps=False,
@@ -164,14 +164,14 @@ def _plot_time_betas(models=None, tb_data=None, element='beta_time',
         _ = plt.setp(time_beta_plot[y]['medians'], **kwargs)
         _ = plt.setp(time_beta_plot[y]['whiskers'], **kwargs)
 
-def plot_time_betas(models=None, tb_data=None, element='beta_time',
+def plot_time_betas(models=None, df=None, element='beta_time',
                     y='exp(beta)', coefs=None, x='timepoint_end_col',
                     by=['model_cohort','coef'], timepoint_id_col=None, timepoint_end_col=None, 
                     subplot=None, ticks_at=None, ylabel=None, xlabel='time',
                     num_ticks=10, step_size=None, fill=True, alpha=0.5, pal=None,
                     value_name='beta', **kwargs):
-    if tb_data is None:
-        tb_data = extract_time_betas(models=models, element=element, coefs=coefs,
+    if df is None:
+        df = extract_time_betas(models=models, element=element, coefs=coefs,
                                      value_name=value_name, timepoint_id_col=timepoint_id_col,
                                      timepoint_end_col=timepoint_end_col)
         timepoint_id_col, timepoint_end_col = _get_timepoint_cols(models=models,
@@ -181,14 +181,14 @@ def plot_time_betas(models=None, tb_data=None, element='beta_time',
         logger.debug('timepoint_end_col set to {}'.format(timepoint_end_col))
     if by:
         if not pal:
-            num_grps = len(tb_data.drop_duplicates(subset=by).loc[:, by].values)
+            num_grps = len(df.drop_duplicates(subset=by).loc[:, by].values)
             pal = _get_color_palette(num_grps)
         legend_handles = list()
         i = 0
         if not subplot:
             subplot = plt.subplots(1, 1)
-        for grp, df in tb_data.groupby(by):
-            _plot_time_betas(tb_data=df.copy(),
+        for grp, grp_df in df.groupby(by):
+            _plot_time_betas(df=grp_df.copy(),
                              timepoint_id_col=timepoint_id_col, timepoint_end_col=timepoint_end_col,
                              num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
                              x=x, y=y, color=pal[i], subplot=subplot, alpha=alpha, fill=fill, **kwargs)
@@ -197,7 +197,7 @@ def plot_time_betas(models=None, tb_data=None, element='beta_time',
         plt.legend(handles=legend_handles)
         plt.show()
     else:
-        _plot_time_betas(tb_data=tb_data, num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
+        _plot_time_betas(df=df, num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
                          timepoint_id_col=timepoint_id_col, timepoint_end_col=timepoint_end_col,
                          x=x, y=y, subplot=subplot, alpha=alpha, fill=fill, **kwargs)
 
