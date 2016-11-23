@@ -41,10 +41,10 @@ def test_pem_model(**kwargs):
     survivalstan.utils.plot_coefs([testfit], element='beta_time')
     survivalstan.utils.plot_coefs([testfit], element='beta_time', trans=np.exp)
     survivalstan.utils.plot_pp_survival([testfit])
-    survivalstan.utils.plot_time_betas(models=[testfit], y='beta', x='end_time', coefs=['sex[T.male]'])
+    survivalstan.utils.plot_time_betas(models=[testfit], y='beta', x='end_time', coefs=[testfit['x_names'][0]])
     survivalstan.utils.plot_time_betas(models=[testfit], y='exp(beta)')
     survivalstan.utils.plot_time_betas(models=[testfit], y='exp(beta)', ylim=[0, 4])
-    first_beta = survivalstan.utils.extract_time_betas([testfit], coefs=['sex[T.male]'])
+    first_beta = survivalstan.utils.extract_time_betas([testfit], coefs=[testfit['x_names'][0]])
     survivalstan.utils.plot_time_betas(df=first_beta, by=['coef'], y='beta', x='end_time')
     return(testfit) 
 
@@ -77,10 +77,10 @@ def test_pem_null_model(force=True, **kwargs):
     survivalstan.utils.plot_coefs([testfit], element='beta_time')
     survivalstan.utils.plot_coefs([testfit], element='beta_time', trans=np.exp)
     survivalstan.utils.plot_pp_survival([testfit])
-    survivalstan.utils.plot_time_betas(models=[testfit], y='beta', x='end_time', coefs=['sex[T.male]'])
+    survivalstan.utils.plot_time_betas(models=[testfit], y='beta', x='end_time', coefs=[testfit['x_names'][0]])
     survivalstan.utils.plot_time_betas(models=[testfit], y='exp(beta)')
     survivalstan.utils.plot_time_betas(models=[testfit], y='exp(beta)', ylim=[0, 4])
-    first_beta = survivalstan.utils.extract_time_betas([testfit], coefs=['sex[T.male]'])
+    first_beta = survivalstan.utils.extract_time_betas([testfit], coefs=[testfit['x_names'][0]])
     return(testfit)
 
 
