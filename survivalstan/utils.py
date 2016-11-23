@@ -165,7 +165,7 @@ def _plot_time_betas(models=None, df=None, element='beta_time',
         _ = plt.setp(time_beta_plot[y]['whiskers'], **kwargs)
 
 def plot_time_betas(models=None, df=None, element='beta_time',
-                    y='exp(beta)', coefs=None, x='timepoint_end_col',
+                    y='beta', trans=None, coefs=None, x='timepoint_end_col',
                     by=['model_cohort','coef'], timepoint_id_col=None, timepoint_end_col=None, 
                     subplot=None, ticks_at=None, ylabel=None, xlabel='time',
                     num_ticks=10, step_size=None, fill=True, alpha=0.5, pal=None,
@@ -179,6 +179,10 @@ def plot_time_betas(models=None, df=None, element='beta_time',
                                                               timepoint_end_col=timepoint_end_col)
         logger.debug('timepoint_id_col set to {}'.format(timepoint_id_col))
         logger.debug('timepoint_end_col set to {}'.format(timepoint_end_col))
+    if trans:
+        trans_name = '{}({})'.format(trans.__name__, y)
+        df[trans_name] = trans(df[y])
+        y = trans_name
     if by:
         if not pal:
             num_grps = len(df.drop_duplicates(subset=by).loc[:, by].values)
@@ -466,7 +470,7 @@ def _prep_data_for_baseline_hazard(models, element='baseline'):
     return 'log_hazard', 'end_time_id', df
 
 
-def plot_coefs(models, element='coefs', force_direction=None, trans=None):
+def plot_coefs(models, element='coefs', force_direction=None, trans=None, **kwargs):
     """
     Plot coefficients for models listed
 
@@ -480,6 +484,7 @@ def plot_coefs(models, element='coefs', force_direction=None, trans=None):
         Other options (depending on model type) include: 
         - 'grp_coefs'
         - 'baseline'
+        - 'time_beta'
     force_direction (string, optional):
         Takes values 'h' or 'v'
             - if 'h': forces horizontal orientation, (`variable` names along the x axis)
@@ -493,7 +498,10 @@ def plot_coefs(models, element='coefs', force_direction=None, trans=None):
     """
 
     # TODO: check if models object is a list or a single model
-
+    
+    if element=='time_beta':
+        return plot_time_betas(models=models, element=element, trans=trans, **kwargs)
+    
     # prep data from models given
     if element=='baseline' or element=='baseline_raw':
         value, variable, df = _prep_data_for_baseline_hazard(models, element=element)
