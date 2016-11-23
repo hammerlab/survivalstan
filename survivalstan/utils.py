@@ -93,24 +93,33 @@ def _get_timepoint_cols(models, timepoint_id_col, timepoint_end_col):
         raise ValueError('timepoint_id_col and timepoint_end_col are required, but were either not given or were not set by model')
     return (timepoint_id_col, timepoint_end_col)
     
-def _plot_time_betas(tb_data=None, models=None, element='beta_time',
-                     coefs=None, y='exp(beta)', value_name='beta',
-                     timepoint_id_col=None, timepoint_end_col=None, x='timepoint_end_col',
-                     subplot=None, ticks_at=None, ylabel=None,
-                     xlabel='time', **kwargs):
+def _plot_time_betas(models=None, tb_data=None, element='beta_time',
+                     coefs=None, y='exp(beta)', ylabel=None, 
+                     timepoint_id_col=None, timepoint_end_col=None,
+                     x='timepoint_end_col', xlabel='time', 
+                     subplot=None, ticks_at=None, num_ticks=10, step_size=None,
+                     fill=True, value_name='beta', **kwargs):
     if tb_data is None:
         tb_data = extract_time_betas(models=models, element=element, coefs=coefs,
                                      value_name=value_name, timepoint_id_col=timepoint_id_col,
                                      timepoint_end_col=timepoint_end_col)
-    timepoint_id_col, timepoint_end_col = _get_timepoint_cols(models=models,
+        timepoint_id_col, timepoint_end_col = _get_timepoint_cols(models=models,
                                                               timepoint_id_col=timepoint_id_col,
                                                               timepoint_end_col=timepoint_end_col)
+        logger.debug('timepoint_id_col set to {}'.format(timepoint_id_col))
+        logger.debug('timepoint_end_col set to {}'.format(timepoint_end_col))
+    else:
+        if not timepoint_id_col:
+            timepoint_id_col = 'timepoint_id'
     if x == 'timepoint_end_col':
         time_col = timepoint_end_col
     elif x == 'timepoint_id_col':
         time_col = timepoint_id_col
     else:
         time_col = x
+    logger.debug('time_col set to {}'.format(time_col))
+    if not time_col:
+        raise ValueError('time_col is not defined - specify name of column using `x`')
     
     if not ylabel:
         if not coefs or len(coefs)>1:
@@ -123,16 +132,16 @@ def _plot_time_betas(tb_data=None, models=None, element='beta_time',
     else:
         f, ax = subplot
     if ticks_at is None:
-        x_min = min(tb_data[x].drop_duplicates())
-        x_max = max(tb_data[x].drop_duplicates())
+        x_min = min(tb_data[time_col].drop_duplicates())
+        x_max = max(tb_data[time_col].drop_duplicates())
         if step_size is None:
             step_size = (x_max - x_min)/num_ticks
         ticks_at = np.arange(start=x_min, stop=x_max, step=step_size)
     time_beta_plot = tb_data.boxplot(
         column=y,
-        by=x,
+        by=time_col,
         whis=[2.5, 97.5],
-        positions=tb_data[x].drop_duplicates(),
+        positions=tb_data[time_col].drop_duplicates(),
         ax=ax,
         return_type='dict',
         showcaps=False,
@@ -149,11 +158,11 @@ def _plot_time_betas(tb_data=None, models=None, element='beta_time',
          [r"%d" % (int(round(x))) for x in ticks_at])
 
     if dict(**kwargs):
-        _ = plt.setp(survival_plot[y]['boxes'], **kwargs)
-        _ = plt.setp(survival_plot[y]['medians'], **kwargs)
-        _ = plt.setp(survival_plot[y]['whiskers'], **kwargs)
+        _ = plt.setp(time_beta_plot[y]['boxes'], **kwargs)
+        _ = plt.setp(time_beta_plot[y]['medians'], **kwargs)
+        _ = plt.setp(time_beta_plot[y]['whiskers'], **kwargs)
 
-def plot_time_betas(tb_data=None, models=None, element='beta_time',
+def plot_time_betas(models=None, tb_data=None, element='beta_time',
                     y='exp(beta)', coefs=None, x='timepoint_end_col',
                     by=['model_cohort','coef'], timepoint_id_col=None, timepoint_end_col=None, 
                     subplot=None, ticks_at=None, ylabel=None, xlabel='time',
