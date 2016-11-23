@@ -38,7 +38,9 @@ def extract_time_betas(models, element='beta_time', value_name='beta', **kwargs)
     data = [_extract_time_betas_single_model(model) for model in models]
     return pd.concat(data)
 
-def _extract_time_betas_single_model(stanmodel, element='beta_time', value_name='beta', timepoint_id_col=None, timepoint_end_col=None):
+def _extract_time_betas_single_model(stanmodel, element='beta_time', coefs=None,
+                                     value_name='beta', timepoint_id_col=None,
+                                     timepoint_end_col=None):
     if not timepoint_id_col:
         timepoint_id_col = stanmodel['timepoint_id_col']
     if not timepoint_end_col:
@@ -46,13 +48,131 @@ def _extract_time_betas_single_model(stanmodel, element='beta_time', value_name=
     if not timepoint_id_col or not timepoint_end_col:
         raise ValueError('timepoint_id_col and timepoint_end_col are required, but were either not given or were not set by stan model')
     time_betas = stanmodel['fit'].extract()[element]
-    time_betas = pd.DataFrame(time_betas[:,0,:])
-    time_betas = pd.melt(time_betas, var_name=timepoint_id_col, value_name=value_name)
+    coef_names = stanmodel['x_names']
+    num_coefs = time_betas.shape[1]
+    if len(coef_names) != num_coefs:
+        raise ValueError('Num coefs does not equal number of coef names. Please report this as a bug')
+    plot_coefs = np.arange(num_coefs)
+    if coefs is not None:
+        plot_coefs = [i for i in plot_coefs if coef_names[i] in coefs]
+    time_betas = list()
+    for i in plot_coefs:
+        tb_df = pd.DataFrame(time_betas[:,i,:])
+        tb_df = pd.melt(tb_df, var_name=timepoint_id_col, value_name=value_name)
+        tb_df['coef'] = coef_names[i]
+        time_betas.append(tb_df)
+    time_betas = pd.concat(time_betas)
     timepoint_data = stanmodel['df'].loc[:,[timepoint_id_col, timepoint_end_col]].drop_duplicates()
     time_betas = pd.merge(time_betas, timepoint_data, on=timepoint_id_col)
     time_betas['exp({})'.format(value_name)] = np.exp(time_betas[value_name])
     time_betas['model_cohort'] = stanmodel['model_cohort']
     return(time_betas)
+
+def _get_timepoint_cols(models, timepoint_id_col, timepoint_end_col):
+    if not timepoint_id_col:
+        timepoint_id_col = unique([model['timepoint_id_col'] for model in models])
+        if len(timepoint_id_col)>1:
+            ValueError('timepoint_id_col is not uniform for all models. Please reformat data and set timepoint_id_col manually')
+        elif len(timepoint_id_col)==1:
+            timepoint_id_col = timepoint_id_col[0]
+    if not timepoint_end_col:
+        timepoint_end_col = unique([model['timepoint_end_col'] for model in models])
+        if len(timepoint_end_col)>1:
+            ValueError('timepoint_end_col is not uniform for all models. Please reformat data and set timepoint_end_col manually')
+        elif len(timepoint_end_col)==1:
+            timepoint_end_col = timepoint_end_col[0]
+    if not timepoint_id_col or not timepoint_end_col:
+        raise ValueError('timepoint_id_col and timepoint_end_col are required, but were either not given or were not set by model')
+    return (timepoint_id_col, timepoint_end_col)
+    
+def _plot_time_betas(tb_data=None, models=None, element='beta_time',
+                     coefs=None, y='exp(beta)', value_name='beta',
+                     timepoint_id_col=None, timepoint_end_col=None, x='timepoint_end_col',
+                     subplot=None, ticks_at=None, ylabel=None,
+                     xlabel='time', **kwargs):
+    if tb_data is None:
+        tb_data = extract_time_betas(models=models, element=element, coefs=coefs,
+                                     value_name=value_name, timepoint_id_col=timepoint_id_col,
+                                     timepoint_end_col=timepoint_end_col)
+    timepoint_id_col, timepoint_end_col = _get_timepoint_cols(models=models,
+                                                              timepoint_id_col=timepoint_id_col,
+                                                              timepoint_end_col=timepoint_end_col)
+    if x == 'timepoint_end_col':
+        time_col = timepoint_end_col
+    elif x == 'timepoint_id_col':
+        time_col = timepoint_id_col
+    else:
+        time_col = x
+    
+    if not ylabel:
+        if not coefs or len(coefs)>1:
+            ylabel = '{}'.format(y)
+        else:
+            ylabel = '{} for {}'.format(y, coefs[0])
+    tb_data.sort_values(time_col, inplace=True)
+    if not subplot:
+        f, ax = plt.subplots(1, 1)
+    else:
+        f, ax = subplot
+    if ticks_at is None:
+        x_min = min(tb_data[x].drop_duplicates())
+        x_max = max(tb_data[x].drop_duplicates())
+        if step_size is None:
+            step_size = (x_max - x_min)/num_ticks
+        ticks_at = np.arange(start=x_min, stop=x_max, step=step_size)
+    time_beta_plot = tb_data.boxplot(
+        column=y,
+        by=x,
+        whis=[2.5, 97.5],
+        positions=tb_data[x].drop_duplicates(),
+        ax=ax,
+        return_type='dict',
+        showcaps=False,
+        patch_artist=fill,
+    )
+    f.suptitle('')
+    _ = plt.ylim([0, 1])
+    _ = plt.xticks(rotation="vertical")
+    _ = plt.xlabel(xlabel)
+    _ = plt.ylabel(ylabel)
+    _ = plt.title('')
+    _ = ax.xaxis.set_ticks(ticks_at)
+    _ = ax.xaxis.set_ticklabels(
+         [r"%d" % (int(round(x))) for x in ticks_at])
+
+    if dict(**kwargs):
+        _ = plt.setp(survival_plot[y]['boxes'], **kwargs)
+        _ = plt.setp(survival_plot[y]['medians'], **kwargs)
+        _ = plt.setp(survival_plot[y]['whiskers'], **kwargs)
+
+def plot_time_betas(tb_data=None, models=None, element='beta_time',
+                    y='exp(beta)', coefs=None, x='timepoint_end_col',
+                    by=['model_cohort','coef'], timepoint_id_col=None, timepoint_end_col=None, 
+                    subplot=None, ticks_at=None, ylabel=None, xlabel='time',
+                    num_ticks=10, step_size=None, fill=True, alpha=0.5, pal=None,
+                    value_name='beta', **kwargs):
+    if tb_data is None:
+        tb_data = extract_time_betas(models=models, element=element, coefs=coefs,
+                                     value_name=value_name, timepoint_id_col=timepoint_id_col,
+                                     timepoint_end_col=timepoint_end_col)
+    if by:
+        if not pal:
+            num_grps = len(tb_data.drop_duplicates(subset=by)[by].values)
+            pal = _get_color_palette(num_grps)
+        legend_handles = list()
+        i = 0
+        if not subplot:
+            subplot = plt.subplots(1, 1)
+        for grp, df in pp_surv.groupby(by):
+            _plot_time_betas(tb_data=df.copy(), num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
+                             x=x, y=y, color=pal[i], subplot=subplot, alpha=alpha, fill=fill, **kwargs)
+            legend_handles.append(mpatches.Patch(color=pal[i], label=grp))
+            i = i+1
+        plt.legend(handles=legend_handles)
+        plt.show()
+    else:
+        _plot_time_betas(tb_data=df.copy(), num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
+                         x=x, y=y, subplot=subplot, alpha=alpha, fill=fill, **kwargs)
 
 def _get_sample_ids_single_model(model, sample_col=None, sample_id_col=None):
     if not sample_col:
