@@ -98,7 +98,7 @@ def _plot_time_betas(models=None, tb_data=None, element='beta_time',
                      timepoint_id_col=None, timepoint_end_col=None,
                      x='timepoint_end_col', xlabel='time', 
                      subplot=None, ticks_at=None, num_ticks=10, step_size=None,
-                     fill=True, value_name='beta', **kwargs):
+                     fill=True, value_name='beta', ylim=None, **kwargs):
     if tb_data is None:
         tb_data = extract_time_betas(models=models, element=element, coefs=coefs,
                                      value_name=value_name, timepoint_id_col=timepoint_id_col,
@@ -155,6 +155,9 @@ def _plot_time_betas(models=None, tb_data=None, element='beta_time',
     _ = ax.xaxis.set_ticks(ticks_at)
     _ = ax.xaxis.set_ticklabels(
          [r"%d" % (int(round(x))) for x in ticks_at])
+    
+    if ylim:
+        _ = plt.ylim(ylim)
 
     if dict(**kwargs):
         _ = plt.setp(time_beta_plot[y]['boxes'], **kwargs)
