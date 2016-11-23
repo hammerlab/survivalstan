@@ -57,7 +57,7 @@ def _extract_time_betas_single_model(stanmodel, element='beta_time', coefs=None,
     logger.debug('num_coefs set to {}'.format(num_coefs))
     
     # determine which coefs to extract
-    plot_coefs = np.arange(num_coefs)
+    plot_coefs = list(np.arange(num_coefs))
     if coefs is not None:
         plot_coefs = [i for i in plot_coefs if coef_names[i] in coefs]
     logger.debug('plot_coefs set to {}'.format(','.join(str(plot_coefs))))
