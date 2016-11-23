@@ -63,18 +63,18 @@ def _extract_time_betas_single_model(stanmodel, element='beta_time', coefs=None,
     logger.debug('plot_coefs set to {}'.format(','.join(str(plot_coefs))))
     
     # extract time-betas for each coef
-    time_betas = list()
+    time_data = list()
     for i in plot_coefs:
         tb_df = pd.DataFrame(time_betas[:,i,:])
         tb_df = pd.melt(tb_df, var_name=timepoint_id_col, value_name=value_name)
         tb_df['coef'] = coef_names[i]
-        time_betas.append(tb_df)
-    time_betas = pd.concat(time_betas)
+        time_data.append(tb_df)
+    time_data = pd.concat(time_data)
     timepoint_data = stanmodel['df'].loc[:,[timepoint_id_col, timepoint_end_col]].drop_duplicates()
-    time_betas = pd.merge(time_betas, timepoint_data, on=timepoint_id_col)
-    time_betas['exp({})'.format(value_name)] = np.exp(time_betas[value_name])
-    time_betas['model_cohort'] = stanmodel['model_cohort']
-    return(time_betas)
+    time_data = pd.merge(time_data, timepoint_data, on=timepoint_id_col)
+    time_data['exp({})'.format(value_name)] = np.exp(time_data[value_name])
+    time_data['model_cohort'] = stanmodel['model_cohort']
+    return(time_data)
 
 def _get_timepoint_cols(models, timepoint_id_col, timepoint_end_col):
     if not timepoint_id_col:
@@ -165,13 +165,13 @@ def plot_time_betas(tb_data=None, models=None, element='beta_time',
                                      timepoint_end_col=timepoint_end_col)
     if by:
         if not pal:
-            num_grps = len(tb_data.drop_duplicates(subset=by)[by].values)
+            num_grps = len(tb_data.drop_duplicates(subset=by).loc[:, by].values)
             pal = _get_color_palette(num_grps)
         legend_handles = list()
         i = 0
         if not subplot:
             subplot = plt.subplots(1, 1)
-        for grp, df in pp_surv.groupby(by):
+        for grp, df in tb_data.groupby(by):
             _plot_time_betas(tb_data=df.copy(), num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
                              x=x, y=y, color=pal[i], subplot=subplot, alpha=alpha, fill=fill, **kwargs)
             legend_handles.append(mpatches.Patch(color=pal[i], label=grp))
@@ -179,7 +179,7 @@ def plot_time_betas(tb_data=None, models=None, element='beta_time',
         plt.legend(handles=legend_handles)
         plt.show()
     else:
-        _plot_time_betas(tb_data=df.copy(), num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
+        _plot_time_betas(tb_data=tb_data, num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
                          x=x, y=y, subplot=subplot, alpha=alpha, fill=fill, **kwargs)
 
 def _get_sample_ids_single_model(model, sample_col=None, sample_id_col=None):
