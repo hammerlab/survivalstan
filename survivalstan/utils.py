@@ -148,7 +148,6 @@ def _plot_time_betas(models=None, tb_data=None, element='beta_time',
         patch_artist=fill,
     )
     f.suptitle('')
-    _ = plt.ylim([0, 1])
     _ = plt.xticks(rotation="vertical")
     _ = plt.xlabel(xlabel)
     _ = plt.ylabel(ylabel)
