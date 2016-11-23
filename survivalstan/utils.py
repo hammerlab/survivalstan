@@ -48,13 +48,21 @@ def _extract_time_betas_single_model(stanmodel, element='beta_time', coefs=None,
     if not timepoint_id_col or not timepoint_end_col:
         raise ValueError('timepoint_id_col and timepoint_end_col are required, but were either not given or were not set by stan model')
     time_betas = stanmodel['fit'].extract()[element]
+    
+    # determine coef names
     coef_names = stanmodel['x_names']
     num_coefs = time_betas.shape[1]
     if len(coef_names) != num_coefs:
         raise ValueError('Num coefs does not equal number of coef names. Please report this as a bug')
+    logger.debug('num_coefs set to {}'.format(num_coefs))
+    
+    # determine which coefs to extract
     plot_coefs = np.arange(num_coefs)
     if coefs is not None:
         plot_coefs = [i for i in plot_coefs if coef_names[i] in coefs]
+    logger.debug('plot_coefs set to {}'.format(','.join(str(plot_coefs))))
+    
+    # extract time-betas for each coef
     time_betas = list()
     for i in plot_coefs:
         tb_df = pd.DataFrame(time_betas[:,i,:])
