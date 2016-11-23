@@ -484,7 +484,7 @@ def plot_coefs(models, element='coefs', force_direction=None, trans=None, **kwar
         Other options (depending on model type) include: 
         - 'grp_coefs'
         - 'baseline'
-        - 'time_beta'
+        - 'beta_time'
     force_direction (string, optional):
         Takes values 'h' or 'v'
             - if 'h': forces horizontal orientation, (`variable` names along the x axis)
@@ -499,7 +499,7 @@ def plot_coefs(models, element='coefs', force_direction=None, trans=None, **kwar
 
     # TODO: check if models object is a list or a single model
     
-    if element=='time_beta':
+    if element=='beta_time':
         return plot_time_betas(models=models, element=element, trans=trans, **kwargs)
     
     # prep data from models given
