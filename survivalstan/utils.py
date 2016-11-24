@@ -35,10 +35,12 @@ def _summarize_survival(df, time_col, event_col, evaluate_at=None):
 
 
 def extract_time_betas(models, element='beta_time', value_name='beta', **kwargs):
-    data = [_extract_time_betas_single_model(model) for model in models]
+    data = [_extract_time_betas_single_model(model, element=element, value_name=value_name, **kwargs) for model in models]
     return pd.concat(data)
 
-def _extract_time_betas_single_model(stanmodel, element='beta_time', value_name='beta', timepoint_id_col=None, timepoint_end_col=None):
+def _extract_time_betas_single_model(stanmodel, element='beta_time', coefs=None,
+                                     value_name='beta', timepoint_id_col=None,
+                                     timepoint_end_col=None):
     if not timepoint_id_col:
         timepoint_id_col = stanmodel['timepoint_id_col']
     if not timepoint_end_col:
@@ -46,13 +48,162 @@ def _extract_time_betas_single_model(stanmodel, element='beta_time', value_name=
     if not timepoint_id_col or not timepoint_end_col:
         raise ValueError('timepoint_id_col and timepoint_end_col are required, but were either not given or were not set by stan model')
     time_betas = stanmodel['fit'].extract()[element]
-    time_betas = pd.DataFrame(time_betas[:,0,:])
-    time_betas = pd.melt(time_betas, var_name=timepoint_id_col, value_name=value_name)
+    
+    # determine coef names
+    coef_names = list(stanmodel['x_names'])
+    num_coefs = time_betas.shape[1]
+    if len(coef_names) != num_coefs:
+        raise ValueError('Num coefs does not equal number of coef names. Please report this as a bug')
+    logger.debug('num_coefs set to {}'.format(num_coefs))
+    
+    # determine which coefs to extract
+    plot_coefs = list(np.arange(num_coefs))
+    if coefs is not None:
+        plot_coefs = [val for val in plot_coefs if coef_names[val] in coefs]
+    logger.debug('plot_coefs set to {}'.format(','.join(str(plot_coefs))))
+    
+    # extract time-betas for each coef
+    time_data = list()
+    for i in plot_coefs:
+        tb_df = pd.DataFrame(time_betas[:,i,:])
+        tb_df = pd.melt(tb_df, var_name=timepoint_id_col, value_name=value_name)
+        tb_df['coef'] = coef_names[i]
+        time_data.append(tb_df)
+    time_data = pd.concat(time_data)
     timepoint_data = stanmodel['df'].loc[:,[timepoint_id_col, timepoint_end_col]].drop_duplicates()
-    time_betas = pd.merge(time_betas, timepoint_data, on=timepoint_id_col)
-    time_betas['exp({})'.format(value_name)] = np.exp(time_betas[value_name])
-    time_betas['model_cohort'] = stanmodel['model_cohort']
-    return(time_betas)
+    time_data = pd.merge(time_data, timepoint_data, on=timepoint_id_col)
+    time_data['exp({})'.format(value_name)] = np.exp(time_data[value_name])
+    time_data['model_cohort'] = stanmodel['model_cohort']
+    return(time_data)
+
+def _get_timepoint_cols(models, timepoint_id_col, timepoint_end_col):
+    if not timepoint_id_col:
+        timepoint_id_col = np.unique([model['timepoint_id_col'] for model in models])
+        if len(timepoint_id_col)>1:
+            ValueError('timepoint_id_col is not uniform for all models. Please reformat data and set timepoint_id_col manually')
+        elif len(timepoint_id_col)==1:
+            timepoint_id_col = timepoint_id_col[0]
+    if not timepoint_end_col:
+        timepoint_end_col = np.unique([model['timepoint_end_col'] for model in models])
+        if len(timepoint_end_col)>1:
+            ValueError('timepoint_end_col is not uniform for all models. Please reformat data and set timepoint_end_col manually')
+        elif len(timepoint_end_col)==1:
+            timepoint_end_col = timepoint_end_col[0]
+    if not timepoint_id_col or not timepoint_end_col:
+        raise ValueError('timepoint_id_col and timepoint_end_col are required, but were either not given or were not set by model')
+    return (timepoint_id_col, timepoint_end_col)
+    
+def _plot_time_betas(models=None, df=None, element='beta_time',
+                     coefs=None, y='exp(beta)', ylabel=None, 
+                     timepoint_id_col=None, timepoint_end_col=None,
+                     x='timepoint_end_col', xlabel='time', 
+                     subplot=None, ticks_at=None, num_ticks=10, step_size=None,
+                     fill=True, value_name='beta', ylim=None, **kwargs):
+    if df is None:
+        df = extract_time_betas(models=models, element=element, coefs=coefs,
+                                     value_name=value_name, timepoint_id_col=timepoint_id_col,
+                                     timepoint_end_col=timepoint_end_col)
+        timepoint_id_col, timepoint_end_col = _get_timepoint_cols(models=models,
+                                                              timepoint_id_col=timepoint_id_col,
+                                                              timepoint_end_col=timepoint_end_col)
+        logger.debug('timepoint_id_col set to {}'.format(timepoint_id_col))
+        logger.debug('timepoint_end_col set to {}'.format(timepoint_end_col))
+    else:
+        if not timepoint_id_col:
+            timepoint_id_col = 'timepoint_id'
+    if x == 'timepoint_end_col':
+        time_col = timepoint_end_col
+    elif x == 'timepoint_id_col':
+        time_col = timepoint_id_col
+    else:
+        time_col = x
+    logger.debug('time_col set to {}'.format(time_col))
+    if not time_col:
+        raise ValueError('time_col is not defined - specify name of column using `x`')
+    
+    if not ylabel:
+        if not coefs or len(coefs)>1:
+            ylabel = '{}'.format(y)
+        else:
+            ylabel = '{} for {}'.format(y, coefs[0])
+    df.sort_values(time_col, inplace=True)
+    if not subplot:
+        f, ax = plt.subplots(1, 1)
+    else:
+        f, ax = subplot
+    if ticks_at is None:
+        x_min = min(df[time_col].drop_duplicates())
+        x_max = max(df[time_col].drop_duplicates())
+        if step_size is None:
+            step_size = (x_max - x_min)/num_ticks
+        ticks_at = np.arange(start=x_min, stop=x_max, step=step_size)
+    time_beta_plot = df.boxplot(
+        column=y,
+        by=time_col,
+        whis=[2.5, 97.5],
+        positions=df[time_col].drop_duplicates(),
+        ax=ax,
+        return_type='dict',
+        showcaps=False,
+        patch_artist=fill,
+    )
+    f.suptitle('')
+    _ = plt.xticks(rotation="vertical")
+    _ = plt.xlabel(xlabel)
+    _ = plt.ylabel(ylabel)
+    _ = plt.title('')
+    _ = ax.xaxis.set_ticks(ticks_at)
+    _ = ax.xaxis.set_ticklabels(
+         [r"%d" % (int(round(x))) for x in ticks_at])
+    
+    if ylim:
+        _ = plt.ylim(ylim)
+
+    if dict(**kwargs):
+        _ = plt.setp(time_beta_plot[y]['boxes'], **kwargs)
+        _ = plt.setp(time_beta_plot[y]['medians'], **kwargs)
+        _ = plt.setp(time_beta_plot[y]['whiskers'], **kwargs)
+
+def plot_time_betas(models=None, df=None, element='beta_time',
+                    y='beta', trans=None, coefs=None, x='timepoint_end_col',
+                    by=['model_cohort','coef'], timepoint_id_col=None, timepoint_end_col=None, 
+                    subplot=None, ticks_at=None, ylabel=None, xlabel='time',
+                    num_ticks=10, step_size=None, fill=True, alpha=0.5, pal=None,
+                    value_name='beta', **kwargs):
+    if df is None:
+        df = extract_time_betas(models=models, element=element, coefs=coefs,
+                                     value_name=value_name, timepoint_id_col=timepoint_id_col,
+                                     timepoint_end_col=timepoint_end_col)
+        timepoint_id_col, timepoint_end_col = _get_timepoint_cols(models=models,
+                                                              timepoint_id_col=timepoint_id_col,
+                                                              timepoint_end_col=timepoint_end_col)
+        logger.debug('timepoint_id_col set to {}'.format(timepoint_id_col))
+        logger.debug('timepoint_end_col set to {}'.format(timepoint_end_col))
+    if trans:
+        trans_name = '{}({})'.format(trans.__name__, y)
+        df[trans_name] = trans(df[y])
+        y = trans_name
+    if by:
+        if not pal:
+            num_grps = len(df.drop_duplicates(subset=by).loc[:, by].values)
+            pal = _get_color_palette(num_grps)
+        legend_handles = list()
+        i = 0
+        if not subplot:
+            subplot = plt.subplots(1, 1)
+        for grp, grp_df in df.groupby(by):
+            _plot_time_betas(df=grp_df.copy(),
+                             timepoint_id_col=timepoint_id_col, timepoint_end_col=timepoint_end_col,
+                             num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
+                             x=x, y=y, color=pal[i], subplot=subplot, alpha=alpha, fill=fill, **kwargs)
+            legend_handles.append(mpatches.Patch(color=pal[i], label=grp))
+            i = i+1
+        plt.legend(handles=legend_handles)
+        plt.show()
+    else:
+        _plot_time_betas(df=df, num_ticks=num_ticks, step_size=step_size, ticks_at=ticks_at,
+                         timepoint_id_col=timepoint_id_col, timepoint_end_col=timepoint_end_col,
+                         x=x, y=y, subplot=subplot, alpha=alpha, fill=fill, **kwargs)
 
 def _get_sample_ids_single_model(model, sample_col=None, sample_id_col=None):
     if not sample_col:
@@ -319,7 +470,7 @@ def _prep_data_for_baseline_hazard(models, element='baseline'):
     return 'log_hazard', 'end_time_id', df
 
 
-def plot_coefs(models, element='coefs', force_direction=None, trans=None):
+def plot_coefs(models, element='coefs', force_direction=None, trans=None, **kwargs):
     """
     Plot coefficients for models listed
 
@@ -333,6 +484,7 @@ def plot_coefs(models, element='coefs', force_direction=None, trans=None):
         Other options (depending on model type) include: 
         - 'grp_coefs'
         - 'baseline'
+        - 'beta_time'
     force_direction (string, optional):
         Takes values 'h' or 'v'
             - if 'h': forces horizontal orientation, (`variable` names along the x axis)
@@ -346,7 +498,10 @@ def plot_coefs(models, element='coefs', force_direction=None, trans=None):
     """
 
     # TODO: check if models object is a list or a single model
-
+    
+    if element=='beta_time':
+        return plot_time_betas(models=models, element=element, trans=trans, **kwargs)
+    
     # prep data from models given
     if element=='baseline' or element=='baseline_raw':
         value, variable, df = _prep_data_for_baseline_hazard(models, element=element)
