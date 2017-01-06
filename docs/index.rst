@@ -6,22 +6,9 @@
 $survivalstan
 ========
 
-$survivalstan is a library of Survival Models implemented in `Stan <http://mc-stan.org>` 
-with accompanying functions to make Bayesian survival modeling easier.
+Survivalstan is a library of Survival Models written in `Stan <http://mc-stan.org>`_ 
 
-Typical workflow:
-
-    # import survivalstan
-    import survivalstan
-
-    # .. prep your data
-    
-    # fit your model 
-    fit1 = survivalstan.fit_stan_survival_model(...)
-    
-    # inspect output
-    survivalstan.utils.plot_stan_summary([fit1], metric='Rhat') 
-    survivalstan.utils.plot_coefs([fit1])
+It also contains a number of utility functions helpful when doing survival analysis. 
 
 Features
 --------
@@ -33,12 +20,11 @@ Features
     - Estimate time-varying effects
     - Varying-effects by group
 - Extensible framework - bring your own Stan code, or edit the models provided
-- Uses `pandas <https://pandas.pydata.org>` data frames & `patsy <https://pypi.python.org/pypi/patsy>` formulas
-- Graphical posterior predictive checking (currently PEM models only)
-- Plot posterior estimates of key parameters using `seaborn <https://pypi.python.org/pypi/seaborn>`
-- Annotated posterior draws of parameter estimates, as `pandas <http://pandas.pydata.org>` dataframes
-- Supports caching via as `stancache <http://github.com/jburos/stancache>` or `pystan-cache <https://github.com/paulkernfeld/pystan-cache>`
-
+- Uses `pandas <https://pandas.pydata.org>`_ data frames & `patsy <https://pypi.python.org/pypi/patsy>`_ formulas
+- Graphical posterior predictive checking
+- Plot posterior estimates of key parameters using `seaborn <https://pypi.python.org/pypi/seaborn>`_
+- Annotated posterior draws of parameter estimates, as `pandas <http://pandas.pydata.org>`_ dataframes
+- Supports caching via as `stancache <http://github.com/jburos/stancache>`_ or `pystan-cache <https://github.com/paulkernfeld/pystan-cache>`_
 
 Installation
 ------------
