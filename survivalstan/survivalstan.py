@@ -311,7 +311,7 @@ class SurvivalStanData:
             self.df_nonmiss[self.group_id_col] = self.df_nonmiss[self.group_col].astype('category').cat.codes + 1
 
     def get_group_names(self):
-        if not self.self_group_id_col:
+        if not self.group_id_col:
             return(None)
         
         # which column should describe group names
