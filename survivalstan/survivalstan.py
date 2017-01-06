@@ -111,7 +111,7 @@ def fit_stan_survival_model(df=None,
 
     
     if make_inits:
-        kwargs = dict(kwargs, init = make_inits(input_data))
+        kwargs = dict(kwargs, init = make_inits(input_data.data))
     
     survival_fit = FIT_FUN(
         model_code = model_code,
@@ -143,7 +143,7 @@ def fit_stan_survival_model(df=None,
                                            grp_coef_type=grp_coef_type,
                                            grp_names=grp_names,
                                            columns=x_df.columns,
-                                           input_data=input_data,
+                                           input_data=input_data.data,
                                            model_cohort=model_cohort
                                           )
         except:
