@@ -12,17 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ["utils", "models"]
+__all__ = ['utils', 'models', 'sim']
 
 import sys as _sys
 if (_sys.version_info > (3, 0)):
-    from .survivalstan import *
-    from . import utils, models
     # Python 3 code in this block
-    __all__ = ['utils', 'models']
+    from .survivalstan import *
+    from . import utils, models, sim
+    __all__ = ['utils', 'models', 'sim']
 else:
     import utils
     import models
+    import sim
     from survivalstan import *
 
 from ._version import get_versions

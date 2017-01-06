@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/hammerlab/survivalstan.svg?branch=setup-travis)](https://travis-ci.org/hammerlab/survivalstan) 
-[![Coverage Status](https://coveralls.io/repos/github/hammerlab/survivalstan/badge.svg?branch=master)](https://coveralls.io/github/hammerlab/survivalstan?branch=master)
-[![PyPI version](https://badge.fury.io/py/survivalstan.svg)](https://badge.fury.io/py/survivalstan)
+[![Coverage Status](https://img.shields.io/coveralls/hammerlab/survivalstan.svg)](https://coveralls.io/github/hammerlab/survivalstan?branch=master)
+[![PyPI version](https://img.shields.io/pypi/v/survivalstan.svg)](https://pypi.python.org/pypi/survivalstan)
 
 survivalstan: Survival Models in Stan
 ===============================
@@ -12,15 +12,29 @@ Overview
 
 Library of Stan Models for Survival Analysis
 
+Features:
+
+* Variety of standard survival models
+	- Weibull, Exponential, and Gamma parameterization
+	- PEM models with variety of baseline hazards
+	- PEM model with varying-coefficients (by group)
+	- PEM model with time-varying-effects
+* Extensible framework - bring your own Stan code, or edit the models above
+* Uses [pandas](http://pandas.pydata.org) data frames & [patsy](https://pypi.python.org/pypi/patsy) formulas
+* Graphical posterior predictive checking (currently PEM models only)
+* Plot posterior estimates of key parameters using [seaborn](https://pypi.python.org/pypi/seaborn)
+* Annotate posterior draws of parameter estimates, format as [pandas](http://pandas.pydata.org) dataframes
+* Works with extensions to [pystan](https://pystan.readthedocs.io/en/latest/), such as [stancache](http://github.com/jburos/stancache) or [pystan-cache](https://github.com/paulkernfeld/pystan-cache)
+
 Installation / Usage
 --------------------
 
-Once we push this repo to pypi, you will be able to install using pip, as:
+Install using pip, as:
 
-    $ pip install survivalstan ## (not yet set up)
+    $ pip install survivalstan
 
 
-For now, please clone the repo:
+Or, you can clone the repo:
 
     $ git clone https://github.com/hammerlab/survivalstan.git
     $ pip install .
@@ -28,10 +42,16 @@ For now, please clone the repo:
 Contributing
 ------------
 
-TBD
+Details to come. For now, please do not hesitate to contribute if you would like. 
 
-Example
+Usage examples
 -------
+
+There are several examples included in the [example-notebooks](http://nbviewer.jupyter.org/github/hammerlab/survivalstan/tree/master/example-notebooks/), roughly one corresponding to each model.
+
+If you are not sure where to start, [Test pem_survival_model with simulated data.ipynb](http://nbviewer.jupyter.org/github/hammerlab/survivalstan/blob/master/example-notebooks/Test%20pem_survival_model%20with%20simulated%20data.ipynb) contains the most explanatory text. Many of the other notebooks are sparse on explanation, but do illustrate variations on the different models.
+
+For basic usage:
 
 ```
 import survivalstan
@@ -61,6 +81,9 @@ testfit_wei = survivalstan.fit_stan_survival_model(
 ## coefplot for Weibull coefficient estimates
 sb.boxplot(x = 'value', y = 'variable', data = testfit_wei['coefs'])
 
+## or, use plot_coefs
+survivalstan.utils.plot_coefs([testfit_wei])
+
 ## print summary of MCMC draws from posterior for each parameter
 print(testfit_wei['fit'])
 
@@ -85,6 +108,12 @@ print(testfit_pem['fit'])
 ## coefplot for PEM model results
 sb.boxplot(x = 'value', y = 'variable', data = testfit_pem['coefs'])
 
+## plot baseline hazard (only PEM models)
+survivalstan.utils.plot_coefs([testfit_pem], element='baseline')
+
+## posterior-predictive checking (only PEM models)
+survivalstan.utils.plot_pp_survival([testfit_pem])
+
 ## e.g. compare models using PSIS-LOO
 stanity.loo_compare(testfit_wei['loo'], testfit_pem['loo'])
 
@@ -92,6 +121,10 @@ stanity.loo_compare(testfit_wei['loo'], testfit_pem['loo'])
 sb.boxplot(x = 'value', y = 'variable', hue = 'model_cohort',
     data = testfit_pem['coefs'].append(testfit_wei['coefs']))
 plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+
+## (or, use survivalstan.utils.plot_coefs)
+survivalstan.utils.plot_coefs([testfit_wei, testfit_pem])
+
 ```
 
 

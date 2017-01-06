@@ -1,6 +1,6 @@
 # .coveragerc to control coverage.py
-[run]
+[report]
 omit = 
-	test/*
-	versioneer.py
-	survivalstan/_version.py
+    test/*
+    versioneer.py
+    survivalstan/_version.py
