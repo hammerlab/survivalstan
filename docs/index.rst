@@ -3,12 +3,22 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-$survivalstan
+survivalstan
 ========
 
 Survivalstan is a library of Survival Models written in `Stan <http://mc-stan.org>`_ 
 
 It also contains a number of utility functions helpful when doing survival analysis. 
+
+Typical usage:
+    
+:: 
+ 
+    import survivalstan
+    # .. prep your data
+    fit1 = survivalstan.fit_stan_survival_model(...)
+    survivalstan.utils.plot_stan_summary([fit1], metric=’Rhat’) 
+    survivalstan.utils.plot_coefs([fit1])
 
 Features
 --------
