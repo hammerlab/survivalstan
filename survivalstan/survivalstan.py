@@ -5,26 +5,39 @@ import pandas as pd
 import numpy as np
 
 
-def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None,
-                                           model_cohort = 'survival model', 
-                             time_col = None,
-                             sample_id_col = None, sample_col = None,
-                             group_id_col = None, group_col = None,
-                             timepoint_id_col = None, timepoint_end_col = None,
-                             make_inits = None, stan_data = None,
-                             grp_coef_type = None, FIT_FUN = stanity.fit,
-                             drop_intercept = True,
-                             *args, **kwargs):
+def fit_stan_survival_model(df=None,
+                            formula=None,
+                            event_col=None,
+                            model_code=None,
+                            file=None,
+                            model_cohort='survival model', 
+                            time_col=None,
+                            sample_id_col=None,
+                            sample_col=None,
+                            group_id_col=None,
+                            group_col=None,
+                            timepoint_id_col=None,
+                            timepoint_end_col=None,
+                            make_inits=None,
+                            stan_data=dict(),
+                            grp_coef_type=None,
+                            FIT_FUN=stanity.fit,
+                            drop_intercept=True,
+                            input_data=None,
+                            *args, **kwargs):
     """This function prepares inputs appropriate for stan model model code, and fits that model using Stan.
 
-    Args:
+    Required args:
+    
        df (pandas DataFrame):  The data frame containing input data to Survival model.
        formula (chr): Patsy formula to use for covariates. E.g 'met_status + pd_l1'
        event_col (chr): name of column containing event status. Will be coerced to int
        model_code (chr): stan model code to use.
-       file (chr): path to stan file (if model_code not given).
+       file (chr): path to stan file (if model_code not given)
+       *args, **kwargs: passed to FIT_FUN (stanity.fit or replacement)
 
-    Kwargs:
+    Optional args:
+    
        model_cohort (chr): description of this model fit, to be used when plotting or summarizing output
        time_col (chr): name of column containing event time -- used for parameteric (Weibull) model
        sample_id_col (chr): name of column containing numeric sample ids (1-indexed & sequential)
@@ -81,96 +94,29 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
         if file is None:
             raise AttributeError('Either model_code or file is required.')
     
-    ## input covariates given formula
-    x_df = patsy.dmatrix(formula,
-                          df,
-                          return_type='dataframe'
-                          )
-    
-    ## construct data frame with all necessary columns
-    ## limit to non-missing data 
-    ## (if necessary) transform columns to ids
-    other_cols = [event_col, time_col,
-                  group_id_col, group_col,
-                  timepoint_id_col, timepoint_end_col,
-                  sample_id_col, sample_col] ## list of possible columns to keep
-    
-    other_cols = list(set(other_cols))
-    other_cols.remove(None)
-    
-    if other_cols and len(other_cols)>0:
-        ## filter other inputs to non-missing observations on input covariates
-        df_nonmiss = x_df.join(df[other_cols]).dropna()
-    else:
-        df_nonmiss = x_df
+    if input_data is None:
+        input_data = SurvivalStanData(df=df, formula=formula, time_col=time_col,
+                                      event_col=event_col, 
+                                      sample_id_col=sample_id_col,
+                                      sample_col=sample_col,
+                                      group_id_col=group_id_col,
+                                      group_col=group_col,
+                                      timepoint_id_col=timepoint_id_col,
+                                      timepoint_end_col=timepoint_end_col,
+                                      drop_intercept=drop_intercept,
+                                      **stan_data
+                                     )
+    x_df = input_data.x_df
+    df_nonmiss = input_data.df_nonmiss
 
-    if len(x_df.columns)>1 and drop_intercept:
-        x_df = x_df.ix[:, x_df.columns != 'Intercept']
-
-    ## prep input dictionary to pass to stan.fit
-    survival_model_input_data = {
-        'N': len(df_nonmiss.index),
-        'x': x_df.as_matrix(),
-        'event': df_nonmiss[event_col].values.astype(int),
-        'M': len(x_df.columns),
-    }
-
-    if time_col:
-        survival_model_input_data['y'] = df_nonmiss[time_col].values
-
-    ## construct timepoint ID vars & add to input data
-    if timepoint_end_col and not(timepoint_id_col):
-        timepoint_id_col = 'timepoint_id'
-        df_nonmiss[timepoint_id_col] = df_nonmiss[timepoint_end_col].astype('category').cat.codes + 1
-
-    if timepoint_id_col:
-        unique_timepoints = _prep_timepoint_dataframe(df_nonmiss,
-                                                      timepoint_id_col = timepoint_id_col,
-                                                      timepoint_end_col = timepoint_end_col
-                                                      )
-        timepoint_input_data = {
-            't_dur': unique_timepoints['t_dur'],
-            't_obs': unique_timepoints[timepoint_end_col],
-            't': df_nonmiss[timepoint_id_col].values.astype(int),
-            'T': len(df_nonmiss[timepoint_id_col].unique())
-        }
-        survival_model_input_data = dict(survival_model_input_data, **timepoint_input_data)
-
-    if timepoint_end_col:
-        # not required for all models, leave in for legacy
-        survival_model_input_data['obs_t'] = df_nonmiss[timepoint_end_col].values.astype(int)
-
-    ## construct sample ID var & add to input data
-    if sample_col and not(sample_id_col):
-        sample_id_col = 'sample_id'
-        df_nonmiss[sample_id_col] = df_nonmiss[sample_col].astype('category').cat.codes + 1
-
-    if sample_id_col:
-        sample_input_data = {
-            's': df_nonmiss[sample_id_col].values.astype(int),
-            'S': len(df_nonmiss[sample_id_col].unique())
-        }
-        survival_model_input_data = dict(survival_model_input_data, **sample_input_data)
- 
-    ## construct group ID var & add to input data
-    if group_col and not(group_id_col):
-        group_id_col = 'group_id'
-        df_nonmiss[group_id_col] = df_nonmiss[group_col].astype('category').cat.codes + 1
-
-    if group_id_col:
-        survival_model_input_data['g'] = df_nonmiss[group_id_col].values.astype(int)
-        survival_model_input_data['G'] = len(df_nonmiss[group_id_col].unique())
-        
-    if stan_data:
-        survival_model_input_data = dict(survival_model_input_data, **stan_data)
     
     if make_inits:
-        kwargs = dict(kwargs, init = make_inits(survival_model_input_data))
+        kwargs = dict(kwargs, init = make_inits(input_data))
     
     survival_fit = FIT_FUN(
         model_code = model_code,
         file = file,
-        data = survival_model_input_data,
+        data = input_data.data,
         *args,
         **kwargs
     )
@@ -189,20 +135,15 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
         beta_coefs = None
     
     ## prep by-group coefs if group specified
-    if group_id_col:
+    if input_data.group_id_col:
         try:
-            if group_col:
-                grp_names = df_nonmiss.loc[
-                    ~df_nonmiss[[group_id_col]].duplicated()].sort_values(group_id_col)[group_col].values
-            else:
-                grp_names = df_nonmiss.loc[
-                    ~df_nonmiss[[group_id_col]].duplicated()].sort_values(group_id_col)[group_id_col].values
+            grp_names = input_data.get_group_names()
             grp_coefs = _extract_grp_coefs(survival_fit=survival_fit,
                                            element='grp_beta',
                                            grp_coef_type=grp_coef_type,
                                            grp_names=grp_names,
                                            columns=x_df.columns,
-                                           input_data=survival_model_input_data,
+                                           input_data=input_data,
                                            model_cohort=model_cohort
                                           )
         except:
@@ -230,20 +171,196 @@ def fit_stan_survival_model(df, formula, event_col, model_code = None, file=None
         'df': df_nonmiss,
         'x_df': x_df,
         'x_names': x_df.columns,
-        'data': survival_model_input_data,
+        'data': input_data.data,
         'fit': survival_fit,
         'coefs': beta_coefs,
         'grp_coefs': grp_coefs,
         'loo': loo,
         'model_cohort': model_cohort,
-        'df_all': df,
-        'sample_col': sample_col,
-        'sample_id_col': sample_id_col,
-        'timepoint_id_col': timepoint_id_col,
-        'timepoint_end_col': timepoint_end_col,
+        'df_all': input_data.df,
+        'sample_col': input_data.sample_col,
+        'sample_id_col': input_data.sample_id_col,
+        'timepoint_id_col': input_data.timepoint_id_col,
+        'timepoint_end_col': input_data.timepoint_end_col,
     }
 
 
+class SurvivalStanData:
+    'Input data representing a survival model'
+    
+    def __init__(self,
+                 df, formula, event_col,
+                 time_col=None,
+                 sample_id_col=None, sample_col=None,
+                 group_id_col=None, group_col=None,
+                 timepoint_id_col=None, timepoint_end_col=None,
+                 drop_intercept=True,
+                 
+                 **kwargs):
+        ## capture input params
+        self.df = df
+        self.formula = formula
+        self.event_col = event_col
+        self.time_col = time_col
+        self.group_id_col = group_id_col
+        self.group_col = group_col
+        self.timepoint_id_col = timepoint_id_col
+        self.timepoint_end_col = timepoint_end_col
+        self.sample_id_col = sample_id_col
+        self.sample_col = sample_col
+        self.drop_intercept = drop_intercept
+        
+        self.prep_df_nonmiss()
+        self.prep_input_data(**kwargs)
+    
+    
+    def _prep_othercols(self):
+        ''' Update list of columns to keep, other than those generated by formula
+        '''
+        ## construct data frame with all necessary columns
+        ## limit to non-missing data 
+        ## (if necessary) transform columns to ids
+        other_cols = [self.event_col, self.time_col,
+                      self.group_id_col, self.group_col,
+                      self.timepoint_id_col, self.timepoint_end_col,
+                      self.sample_id_col, self.sample_col]
+    
+        other_cols = list(set(other_cols)) ## dedup
+        other_cols.remove(None)  ## remove 'none'
+        self.other_cols = other_cols
+        
+    def prep_df_nonmiss(self):
+        ''' Create x_df and df_nonmiss 
+        '''
+        self._prep_othercols()
+        
+        ## input covariates given formula
+        x_df = patsy.dmatrix(self.formula,
+                             self.df,
+                             return_type='dataframe'
+                            )
+    
+    
+        if self.other_cols and len(self.other_cols)>0:
+            ## filter other inputs to non-missing observations on input covariates
+            df_nonmiss = x_df.join(self.df[self.other_cols]).dropna()
+        else:
+            df_nonmiss = x_df
+
+        if len(x_df.columns)>1 and self.drop_intercept:
+            x_df = x_df.ix[:, x_df.columns != 'Intercept']
+        
+        self.df_nonmiss = df_nonmiss
+        self.x_df = x_df
+        
+        self._prep_timepoint_ids()
+        self._prep_sample_ids()
+        self._prep_group_ids()
+
+    def _prep_event_data(self, **kwargs):
+        ## prep input dictionary to pass to stan.fit
+        self.data = {
+            'N': len(self.df_nonmiss.index),
+            'M': len(self.x_df.columns),
+            'x': self.x_df.as_matrix(),
+            'event': self.df_nonmiss[self.event_col].values.astype(int),
+        }
+
+        if self.time_col:
+            self.data['y'] = self.df_nonmiss[self.time_col].values
+        
+        if self.timepoint_id_col:
+            self.data['t'] = self.df_nonmiss[self.timepoint_id_col].values.astype(int)
+        
+        if self.sample_id_col:
+            self.data['s'] = self.df_nonmiss[self.sample_id_col].values.astype(int)
+        
+        if self.group_id_col:
+            self.data['g'] = self.df_nonmiss[self.group_id_col].values.astype(int)
+
+    def prep_input_data(self, **kwargs):
+        self._prep_event_data()
+        if self.sample_id_col:
+            self._prep_sample_data()
+        if self.timepoint_id_col:
+            self._prep_timepoint_data()
+        if self.group_id_col:
+            self._prep_group_data()
+        if dict(**kwargs):
+            self.data.update(dict(**kwargs))
+       
+    def _prep_timepoint_ids(self):
+        ''' construct timepoint ID vars & add to df_nonmiss
+        '''
+        if self.timepoint_end_col and not(self.timepoint_id_col):
+            self.timepoint_id_col = 'timepoint_id'
+            self.df_nonmiss[self.timepoint_id_col] = self.df_nonmiss[self.timepoint_end_col].astype('category').cat.codes + 1
+
+    def _prep_sample_ids(self):
+        ''' construct sample ID var & add to df_nonmiss
+        '''
+        if self.sample_col and not(self.sample_id_col):
+            self.sample_id_col = 'sample_id'
+            self.df_nonmiss[self.sample_id_col] = self.df_nonmiss[self.sample_col].astype('category').cat.codes + 1
+
+    def _prep_group_ids(self):
+        ''' construct group ID var & add to df_nonmiss
+        ''' 
+        if self.group_col and not(self.group_id_col):
+            self.group_id_col = 'group_id'
+            self.df_nonmiss[self.group_id_col] = self.df_nonmiss[self.group_col].astype('category').cat.codes + 1
+
+    def get_group_names(self):
+        if not self.self_group_id_col:
+            return(None)
+        
+        # which column should describe group names
+        if self.group_col:
+            grp_desc = self.group_col
+        else:
+            grp_desc = self.group_id_col
+            
+        # group names in order of id
+        self.grp_names = self.df_nonmiss.loc[
+            ~self.df_nonmiss[[self.group_id_col]].duplicated()].sort_values(self.group_id_col)[grp_desc].values
+        return(self.grp_names)
+           
+    def _prep_timepoint_data(self):
+        ''' Add timepoint-id-related data to input vector
+        '''
+        unique_timepoints = _prep_timepoint_dataframe(self.df_nonmiss,
+                                                      timepoint_id_col=self.timepoint_id_col,
+                                                      timepoint_end_col=self.timepoint_end_col
+                                                     )
+        timepoint_input_data = {
+            't_dur': unique_timepoints['t_dur'],
+            't_obs': unique_timepoints[self.timepoint_end_col],
+            'T': len(unique_timepoints.index)
+        }
+        unique_timepoints.reset_index(inplace=True)
+        self.timepoint_df = unique_timepoints
+        self.data.update(timepoint_input_data)
+
+
+    def _prep_sample_data(self):
+        ''' Prep per-sample input data
+        '''
+        sample_input_data = {
+            'S': len(self.df_nonmiss[self.sample_id_col].unique())
+        }
+        self.data.update(sample_input_data)
+ 
+    
+    def _prep_group_data(self):
+        ''' Prep per-group input data
+        '''
+        group_input_data = {
+            'G': len(self.df_nonmiss[self.group_id_col].unique())
+        }
+        self.data.update(group_input_data)
+    
+    
+    
 def _extract_grp_coefs(survival_fit, element, grp_coef_type, grp_names, columns, input_data, model_cohort):
     """ Helper function to extract grp coefs summary data
     """
@@ -355,7 +472,8 @@ def _prep_timepoint_dataframe(df,
     t_durs = time_df.diff(periods=1)
     t_durs.rename(columns = {timepoint_end_col: 't_dur'}, inplace=True)
     time_df = time_df.join(t_durs)
-    time_df.fillna(inplace=True, value=time_df.loc[1, timepoint_end_col])
+    if len(time_df.index)>1:
+        time_df.fillna(inplace=True, value=time_df.loc[1, timepoint_end_col])
     return(time_df)
 
 
