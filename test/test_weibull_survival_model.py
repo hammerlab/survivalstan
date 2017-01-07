@@ -6,7 +6,7 @@ from stancache import stancache
 import numpy as np
 from functools import partial
 from nose.tools import ok_
-num_iter = 500
+num_iter = 800
 from .test_datasets import load_test_dataset
 
 model_code = survivalstan.models.weibull_survival_model
