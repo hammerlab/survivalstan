@@ -516,8 +516,11 @@ def extract_baseline_hazard(results, element='baseline', timepoint_id_col = 'tim
     return(bs_data)
 
 ## convert wide survival data to long format
-def prep_data_long_surv(df, time_col, event_col):
+def prep_data_long_surv(df, time_col, event_col, sample_col=None):
     ''' convert wide survival data to long format
+    
+        If a sample_col is given, result will be de-duped so that 
+            multiple events of the same type are handled correctly.
     '''
     ## identify distinct failure/censor times
     failure_times = df[time_col].unique()
@@ -526,6 +529,7 @@ def prep_data_long_surv(df, time_col, event_col):
     ## cross join failure times with each observation
     df['key'] = 1
     dflong = pd.merge(df, ftimes, on = 'key')
+    del dflong['key']
     
     ## identify end-time & end-status for each sample*failure time
     def gen_end_failure(row):
@@ -547,7 +551,14 @@ def prep_data_long_surv(df, time_col, event_col):
 
     
     ## remove timepoints after failure/censor event
-    dflong = dflong.query('end_time <= {0}'.format(time_col))
+    dflong = dflong.query('end_time <= {0}'.format(time_col)).copy()
+    
+    ## if sample_col is given, remove duplicates induced in case of multiple events
+    if sample_col:
+        dflong['_rank'] = dflong.groupby([sample_col, 'end_time'])[time_col].rank()
+        dflong = dflong.query('_rank == 1')
+        del dflong['_rank']
+    
     return(dflong)
 
 def make_weibull_survival_model_inits(stan_input_dict):
