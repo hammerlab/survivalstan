@@ -3,8 +3,10 @@ import patsy
 import stanity
 import pandas as pd
 import numpy as np
+import logging
 
-
+logger = logging.getLogger(__name__)
+    
 def fit_stan_survival_model(df=None,
                             formula=None,
                             event_col=None,
@@ -516,12 +518,69 @@ def extract_baseline_hazard(results, element='baseline', timepoint_id_col = 'tim
     return(bs_data)
 
 ## convert wide survival data to long format
-def prep_data_long_surv(df, time_col, event_col, sample_col=None):
+def prep_data_long_surv(df, time_col, event_col, sample_col=None,
+                        event_name=None):
     ''' convert wide survival data to long format
     
         If a sample_col is given, result will be de-duped so that 
             multiple events of the same type are handled correctly.
+            
+        If an event_name column is given or if event_col is a list, 
+            then multiple events will be processed. 
+            
+            In this case, result will contain event status for each 
+            event given. E.g. as for semi- or competing event data
+            with multiple event types.
+        
     '''
+    ## process multiple event_names, if given:
+    if event_name:
+        if not sample_col:
+            raise ValueError('Sample col is required to process multiple events')
+        df_events = pd.pivot_table(df,
+                                   index=[sample_col, time_col],
+                                   columns=[event_name],
+                                   values=[event_col],
+                                   fill_value=False).copy()
+        df_events.reset_index(col_level=1, inplace=True)
+        df_events.columns = df_events.columns.droplevel(0)
+        event_cols = list(df[event_name].unique())
+        df_covars = df.loc[:,
+                           [column for column in df.columns if column not in [event_name, event_col]]
+                          ].drop_duplicates().copy()
+        assert(all(df_covars.duplicated(subset=[sample_col, time_col]) == False))
+        df_multi = pd.merge(df_events, df_covars, on=[sample_col, time_col], how='outer')
+    else:
+        df_multi = df
+        event_cols = event_col
+    
+    if isinstance(event_cols, list):
+        logger.debug('Event col is given as a list; processing multi-event data')
+        ## start with covariates per subject_id
+        df_covars = df_multi.loc[:, 
+                                 [column for column in df_multi.columns 
+                                  if column not in event_cols and column not in time_col]].copy()
+        df_covars.drop_duplicates(inplace=True)
+        assert(all(df_covars.duplicated(subset=[sample_col]) == False))
+        ## merge in event-data for each event type
+        ldf = None
+        for event in event_cols:
+            longdata = prep_data_long_surv(df_multi,
+                                           event_col=event,
+                                           time_col=time_col,
+                                           sample_col=sample_col
+                                           )
+            longdata = longdata.loc[:, [sample_col, 'end_time', 'end_failure']].copy()
+            longdata.rename(columns={'end_failure': 'end_{}'.format(event)},
+                            inplace=True)
+            if ldf is None:
+                ldf = longdata
+            else:
+                ldf = pd.merge(ldf, longdata, on=[sample_col, 'end_time'], how='outer')
+        with_covars = pd.merge(ldf, df_covars, on=sample_col, how='outer')
+        return with_covars
+        
+    
     ## identify distinct failure/censor times
     failure_times = df[time_col].unique()
     ftimes = pd.DataFrame({'end_time': failure_times, 'key':1})
