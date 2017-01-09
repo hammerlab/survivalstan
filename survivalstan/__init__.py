@@ -14,17 +14,9 @@
 
 __all__ = ['utils', 'models', 'sim']
 
-import sys as _sys
-if (_sys.version_info > (3, 0)):
-    # Python 3 code in this block
-    from .survivalstan import *
-    from . import utils, models, sim
-    __all__ = ['utils', 'models', 'sim']
-else:
-    import utils
-    import models
-    import sim
-    from survivalstan import *
+from .survivalstan import *
+from . import utils, models, sim
+__all__ = ['utils', 'models', 'sim']
 
 from ._version import get_versions
 __version__ = get_versions()['version']
