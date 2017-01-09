@@ -276,7 +276,7 @@ def sim_data_jointmodel(N, p=0.5, **kwargs):
     r_df['event_name'] = 'new_lesion'
 
     x_df.rename(columns={'index': 'subject_id'}, inplace=True)
-    
+    l_df.rename(columns={'index': 'subject_id'}, inplace=True)
     events = pd.concat([t_df, r_df])
     return dict(params=params, covars=x_df, events=events, biomarker=l_df)
 
