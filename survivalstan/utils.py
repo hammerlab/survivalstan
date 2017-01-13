@@ -258,10 +258,13 @@ def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_ha
                          time_col='event_time', event_col='event_status',
                          by=None,
                          **kwargs):
-    pp_data = prep_pp_data(models, time_element=time_element, event_element=event_element, time_col=time_col, event_col=event_col, **kwargs)
+    pp_data = prep_pp_data(models, time_element=time_element,
+                           event_element=event_element, time_col=time_col, event_col=event_col, **kwargs)
     groups = ['iter', 'model_cohort']
-    if by:
+    if by and isinstance(by, str):
         groups.append(by)
+    elif by and isinstance(by, list):
+        groups.extend(by)
     pp_surv = pp_data.groupby(groups).apply(
          lambda df: _summarize_survival(df, time_col=time_col, event_col=event_col))
     pp_surv.reset_index(inplace=True)
