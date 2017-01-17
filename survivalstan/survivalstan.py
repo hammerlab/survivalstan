@@ -97,7 +97,9 @@ def fit_stan_survival_model(df=None,
             raise AttributeError('Either model_code or file is required.')
     
     if input_data is None:
-        input_data = SurvivalStanData(df=df, formula=formula, time_col=time_col,
+        input_data = SurvivalStanData(df=df,
+                                      formula=formula,
+                                      time_col=time_col,
                                       event_col=event_col, 
                                       sample_id_col=sample_id_col,
                                       sample_col=sample_col,
@@ -520,17 +522,49 @@ def extract_baseline_hazard(results, element='baseline', timepoint_id_col = 'tim
 ## convert wide survival data to long format
 def prep_data_long_surv(df, time_col, event_col, sample_col=None,
                         event_name=None):
-    ''' convert wide survival data to long format
+    ''' Convert wide survival data df to long format, in preparation for modeling using PEM models.
     
-        If a sample_col is given, result will be de-duped so that 
+        Returns a pandas DataFrame with original records duplicated for each unique failure time observed. 
+            Each record will have two new columns: 'end_failure' and 'end_time', indicating
+            the event status (`end_failure`) for each unique timepoint (`end_time`).
+        
+        Multiple events -- either per subject or multiple types of events per subject -- are  
+            supported via optional parameters sample_col and/or event_name.
+            
+            - If a sample_col is given, result will be de-duped so that 
             multiple events of the same type are handled correctly.
             
-        If an event_name column is given or if event_col is a list, 
+            - If an event_name column is given or if event_col is a list, 
             then multiple events will be processed. 
             
             In this case, result will contain event status for each 
             event given. E.g. as for semi- or competing event data
             with multiple event types.
+
+        **Parameters**:
+        
+            :param df: Input data containing survival time & status for each subject
+            :type df: pandas.DataFrame
+
+            :param time_col: name of column containing time to censor/event
+            :type time_col: str
+
+            :param event_col: name of column containing status (1 or True: event, 0 or False: censor)
+            :type event_col: str
+
+            :param sample_col: (optional) column containing sample or subject identifier.
+            :type sample_col: str
+
+            :param event_name: (optional) column containing description of event type, if 
+                more than one type of event is observed
+            :type event_name: str
+
+        **Returns**:
+        
+            :return: Dataframe with original records duplicated for each unique failure time observed. 
+                Each record will have two new columns: 'end_failure' and 'end_time', indicating
+                the timepoint-specific event status for each record.
+            :rtype: pandas.DataFrame
         
     '''
     ## process multiple event_names, if given:
