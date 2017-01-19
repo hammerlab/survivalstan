@@ -64,3 +64,7 @@ License
 The project is licensed under the Apache 2.0 license.
 
 
+Documentation
+-------------
+
+`Documentation http://jburos.github.io/survivalstan`_ is available online.

@@ -15,7 +15,7 @@ Library of Stan Models for Survival Analysis
 Features:
 
 * Variety of standard survival models
-	- Weibull, Exponential, and Gamma parameterization
+	- Weibull, Exponential, and Gamma parameterizations
 	- PEM models with variety of baseline hazards
 	- PEM model with varying-coefficients (by group)
 	- PEM model with time-varying-effects
@@ -25,6 +25,13 @@ Features:
 * Plot posterior estimates of key parameters using [seaborn](https://pypi.python.org/pypi/seaborn)
 * Annotate posterior draws of parameter estimates, format as [pandas](http://pandas.pydata.org) dataframes
 * Works with extensions to [pystan](https://pystan.readthedocs.io/en/latest/), such as [stancache](http://github.com/jburos/stancache) or [pystan-cache](https://github.com/paulkernfeld/pystan-cache)
+
+Support
+-------
+
+Documentation is available [online](http://jburos.github.io/survivalstan).
+
+For help, please reach out to us on [gitter](https://gitter.im/survivalstan).
 
 Installation / Usage
 --------------------
@@ -42,10 +49,15 @@ Or, you can clone the repo:
 Contributing
 ------------
 
-Details to come. For now, please do not hesitate to contribute if you would like. 
+Please contribute to survivalstan development by letting us know if you encounter any [bugs](http://github.com/hammerlab/survivalstan/issues) or have specific [feature requests](http://github.com/hammerlab/survivalstan/issues).
+
+In addition, we welcome contributions of:
+
+* Stan code for survival models
+* Worked examples, as jupyter notebooks or markdown documents
 
 Usage examples
--------
+--------------
 
 There are several examples included in the [example-notebooks](http://nbviewer.jupyter.org/github/hammerlab/survivalstan/tree/master/example-notebooks/), roughly one corresponding to each model.
 
