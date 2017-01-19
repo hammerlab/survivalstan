@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 Survivalstan
-========
+============
 
 Survivalstan is a library of Survival Models written in `Stan <http://mc-stan.org>`_ 
 
@@ -34,32 +34,33 @@ Features
 - Graphical posterior predictive checking
 - Plot posterior estimates of key parameters using `seaborn <https://pypi.python.org/pypi/seaborn>`_
 - Annotated posterior draws of parameter estimates, as `pandas <http://pandas.pydata.org>`_ dataframes
-- Supports caching via as `stancache <http://github.com/jburos/stancache>`_ or `pystan-cache <https://github.com/paulkernfeld/pystan-cache>`_
+- Supports caching via `stancache <http://github.com/jburos/stancache>`_ or `pystan-cache <https://github.com/paulkernfeld/pystan-cache>`_
 
 Installation
 ------------
 
 Install survivalstan via pip:
 
+::
+
     pip install survivalstan
 
 Contribute
 ----------
 
-- Issue Tracker: github.com/hammerlab/survivalstan/issues
-- Source Code: github.com/survivalstan/survivalstan
+- Issue Tracker: http://github.com/hammerlab/survivalstan/issues
+- Source Code: http://github.com/survivalstan/survivalstan
 
 Support
 -------
 
 If you are having issues or questions, please let us know.
 
-We can be reached by email (via github) or via https://gitter.im/survivalstan 
+Please submit an issue `github <http://github.com/hammerlab/survivalstan/issues>`_ or via `gitter <https://gitter.im/survivalstan>`_ 
 
 License
 -------
 
 The project is licensed under the Apache 2.0 license.
-
 
 
