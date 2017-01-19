@@ -847,7 +847,7 @@ def filter_stan_summary(stan_fit, pars=None, remove_nan=False):
         See ?pystan.summary for details about summary stats given.
     
         Parameters
-        -------
+        ----------
 
         stan_fit: 
             StanFit object for which posterior draws are desired to be summarized
@@ -887,7 +887,7 @@ def print_stan_summary(stan_fit, pars=None):
     """ Convenience function to print stan fit summary, for the set of parameters in `pars`.
 
         Parameters
-        -------
+        ----------
 
         stan_fit: 
             StanFit object for which posterior draws are desired to be summarized
@@ -904,7 +904,7 @@ def plot_stan_summary(stan_fit, pars=None, metric='Rhat'):
         Primary use case is to summarize Rhat estimates for set of parameters, as a quick check of convergence.
 
         Parameters
-        -------
+        ----------
 
         stan_fit: 
             StanFit object for which posterior draws are desired to be summarized
@@ -919,3 +919,4 @@ def plot_stan_summary(stan_fit, pars=None, metric='Rhat'):
     if not metric in df.columns:
         raise ValueError('Invalid metric ({}). Should be one of {}'.format(metric, '.'.join(df.columns)))
     sb.distplot(df[metric])
+

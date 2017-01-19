@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 import logging
 
+from . import utils
+
 logger = logging.getLogger(__name__)
     
 def fit_stan_survival_model(df=None,
@@ -37,9 +39,9 @@ def fit_stan_survival_model(df=None,
      2. Compiles & optionally caches compiled stan code
      3. Fits model to data
      4. Tries the following functions on the resulting fit object:
-      - `stanity.psisloo`
-      - `survivalstan.utils.extract_grp_coefs`
-      - `survivalstan.utils.extract_coefs`
+      - `stanity.psisloo` to summarize model fit using LOO-PSIS approximation
+      - extract posterior draws for beta coefficients (if model contains `beta` parameter)
+      - extract posterior draws for grouped-beta coefficients (if applicable)
 
     Parameters:
        df (pandas DataFrame):  The data frame containing input data to Survival model.
@@ -78,6 +80,11 @@ def fit_stan_survival_model(df=None,
           coefs: posterior draws for coefficient values
           loo: psis-loo object returned for fit model. Used for model comparison & summary
           model_cohort: description of this model and/or cohort on which the model was fit
+          df_all: input df given, with calculated values included
+          sample_col: name of column (in df_all) used to identify the sample 
+          sample_id_col: name of column containing numeric id derived from the sample
+          timepoint_end_col: name of column (in df_all) used to determine end-time of 'long' data, if relevant
+          timepoint_id_col: name of column containing numeric id derived from timepoint_end_col
 
     Raises:
        AttributeError, KeyError
@@ -197,7 +204,7 @@ def fit_stan_survival_model(df=None,
 
 
 class SurvivalStanData:
-    'Input data representing a survival model'
+    'Input data representing a survival model in survivalstan'
     
     def __init__(self,
                  df, formula, event_col,
