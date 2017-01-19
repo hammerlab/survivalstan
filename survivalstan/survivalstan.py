@@ -1,4 +1,4 @@
-
+   
 import patsy
 import stanity
 import pandas as pd
@@ -27,21 +27,30 @@ def fit_stan_survival_model(df=None,
                             drop_intercept=True,
                             input_data=None,
                             *args, **kwargs):
-    """This function prepares inputs appropriate for stan model model code, and fits that model using Stan.
+    """Prepare data & fit a survival model using Stan
 
-    Required args:
-    
+    This function wraps a number of steps into one function:
+
+     1. Prepare input data dictionary for Stan
+        - calls `SurvivalStanData` with user-provided formulas & df
+        - (can be overridden using the `input_data` parameter)
+     2. Compiles & optionally caches compiled stan code
+     3. Fits model to data
+     4. Tries the following functions on the resulting fit object:
+      - `stanity.psisloo` to summarize model fit using LOO-PSIS approximation
+      - extract posterior draws for beta coefficients (if model contains `beta` parameter)
+      - extract posterior draws for grouped-beta coefficients (if applicable)
+
+    Parameters:
        df (pandas DataFrame):  The data frame containing input data to Survival model.
        formula (chr): Patsy formula to use for covariates. E.g 'met_status + pd_l1'
-       event_col (chr): name of column containing event status. Will be coerced to int
+       event_col (chr): name of column containing event status. Will be coerced to boolean
        model_code (chr): stan model code to use.
        file (chr): path to stan file (if model_code not given)
        *args, **kwargs: passed to FIT_FUN (stanity.fit or replacement)
 
-    Optional args:
-    
        model_cohort (chr): description of this model fit, to be used when plotting or summarizing output
-       time_col (chr): name of column containing event time -- used for parameteric (Weibull) model
+       time_col (chr): name of column containing event time -- used for parameteric models
        sample_id_col (chr): name of column containing numeric sample ids (1-indexed & sequential)
        sample_col (chr): name of column containing sample descriptions - will be converted to an ID
        group_id_col (chr): name of column containing numeric group ids (1-indexed & sequential)
@@ -58,8 +67,9 @@ def fit_stan_survival_model(df=None,
        drop_intercept (bool): whether to drop the intercept term from the model matrix (default: True)
 
     Returns:
-       dictionary of results objects.  Contents::
+       dictionary of results objects.  
 
+       Contents::
           df: Pandas data frame containing input data, filtered to non-missing obs & with ID variables created
           x_df: Covariate matrix passed to Stan
           x_names: Column names for the covariate matrix passed to Stan
@@ -68,11 +78,14 @@ def fit_stan_survival_model(df=None,
           coefs: posterior draws for coefficient values
           loo: psis-loo object returned for fit model. Used for model comparison & summary
           model_cohort: description of this model and/or cohort on which the model was fit
+          df_all: input df given, with calculated values included
+          sample_col: name of column (in df_all) used to identify the sample 
+          sample_id_col: name of column containing numeric id derived from the sample
+          timepoint_end_col: name of column (in df_all) used to determine end-time of 'long' data, if relevant
+          timepoint_id_col: name of column containing numeric id derived from timepoint_end_col
 
     Raises:
        AttributeError, KeyError
-
-    Generic helper function for fitting variety of survival models using Stan.
 
     Example:
 
@@ -112,7 +125,6 @@ def fit_stan_survival_model(df=None,
                                      )
     x_df = input_data.x_df
     df_nonmiss = input_data.df_nonmiss
-
     
     if make_inits:
         kwargs = dict(kwargs, init = make_inits(input_data.data))
@@ -190,7 +202,7 @@ def fit_stan_survival_model(df=None,
 
 
 class SurvivalStanData:
-    'Input data representing a survival model'
+    'Input data representing a survival model in survivalstan'
     
     def __init__(self,
                  df, formula, event_col,
@@ -522,49 +534,39 @@ def extract_baseline_hazard(results, element='baseline', timepoint_id_col = 'tim
 ## convert wide survival data to long format
 def prep_data_long_surv(df, time_col, event_col, sample_col=None,
                         event_name=None):
-    ''' Convert wide survival data df to long format, in preparation for modeling using PEM models.
+    ''' Convert wide survival dataframe (df) to long format, in preparation for modeling using PEM models.
     
         Returns a pandas DataFrame with original records duplicated for each unique failure time observed. 
             Each record will have two new columns: 'end_failure' and 'end_time', indicating
             the event status (`end_failure`) for each unique timepoint (`end_time`).
-        
-        Multiple events -- either per subject or multiple types of events per subject -- are  
-            supported via optional parameters sample_col and/or event_name.
-            
-            - If a sample_col is given, result will be de-duped so that 
-            multiple events of the same type are handled correctly.
-            
-            - If an event_name column is given or if event_col is a list, 
-            then multiple events will be processed. 
-            
-            In this case, result will contain event status for each 
-            event given. E.g. as for semi- or competing event data
-            with multiple event types.
 
-        **Parameters**:
-        
-            :param df: Input data containing survival time & status for each subject
-            :type df: pandas.DataFrame
+        Parameters:
+            df (pandas.DataFrame):
+               Input data containing survival time & status for each subject
+            time_col (str):
+               name of column containing time to censor/event
+            event_col (str or list of strings):
+              name of column containing status (1 or True: event, 0 or False: censor)
+              If a list is provided, these will be processed as multiple event types. 
+            sample_col (str):
+              (optional) column containing sample or subject identifier.
+              If given, result will be de-duped so that multiple events within
+              a sample are handled correctly.
+            event_name (str):
+              (optional) column containing description of event type, if 
+              more than one type of event is observed. 
+              If given, then then multiple events per subject will be processed. 
 
-            :param time_col: name of column containing time to censor/event
-            :type time_col: str
+        Returns:
+            pandas.DataFrame with original records duplicated for each unique failure time observed.
 
-            :param event_col: name of column containing status (1 or True: event, 0 or False: censor)
-            :type event_col: str
+                Each record will _include all original covariate values_, plus two new columns: 
+                'end_failure' and 'end_time', indicating the timepoint-specific event status for 
+                each record.
 
-            :param sample_col: (optional) column containing sample or subject identifier.
-            :type sample_col: str
-
-            :param event_name: (optional) column containing description of event type, if 
-                more than one type of event is observed
-            :type event_name: str
-
-        **Returns**:
-        
-            :return: Dataframe with original records duplicated for each unique failure time observed. 
-                Each record will have two new columns: 'end_failure' and 'end_time', indicating
-                the timepoint-specific event status for each record.
-            :rtype: pandas.DataFrame
+                If multiple events are given (either via a list of event_cols or by providing an
+                event_name, the result will contain multiple end_failure columns, one for each 
+                event type. 
         
     '''
     ## process multiple event_names, if given:
