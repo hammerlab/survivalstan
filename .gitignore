@@ -2,6 +2,9 @@
 
 *.sublime-*
 
+# swp files
+*.swp
+
 # C extensions
 *.so
 
