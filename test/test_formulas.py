@@ -106,10 +106,5 @@ def test_surv_df_subject_formula():
                                                    X.design_info], df.tail()) 
     res2 = pd.DataFrame(y.new)
     resm = pd.merge(res, res2, on=[1,2], how='inner')
-
-
-
-
-
-
+    ok_(array_equal(resm['0_x'], resm['0_y']))
 
