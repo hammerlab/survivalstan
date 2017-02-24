@@ -1,4 +1,5 @@
-from survivalstan import formulas
+from survivalstan.formulas import *
+import survivalstan
 from nose.tools import ok_, eq_
 from numpy import array_equal
 
@@ -39,13 +40,19 @@ def test_as_id_formula():
     eq_(res.shape[1], 3)
     eq_(res.shape[0], df.shape[0])
     # check valid ids
-    ok_(check_valid_id(res[1], ref=df['time']))
-    ok_(check_valid_id(res[2], ref=df['subject_id']))
+    check_valid_id(res[1], ref=df['time'])
+    check_valid_id(res[2], ref=df['subject_id'])
 
 def is_sequential(x):
-    it = (int(el, 16) for el in x)
+    it = (int(el) for el in sorted(set(x)))
     first = next(it)
     return all(a == b for a, b in enumerate(it, first + 1))
+
+def test_is_sequential():
+    x = [1, 2, 3, 3, 5, 4]
+    ok_(is_sequential(x))
+    y = [1, 3, 4]
+    ok_(not(is_sequential(y)))
 
 def check_valid_id(x, ref=None):
     ''' helper function to validate whether x is an ID
@@ -53,8 +60,9 @@ def check_valid_id(x, ref=None):
     ok_(is_sequential(x))
     eq_(np.min(x), 1)
     # TODO test one-to-one & onto relationship
-    if ref:
+    if ref is not None:
         eq_(np.max(x), len(x.unique()))
+    return(True)
 
 def test_surv_df():
     ''' test that surv stateful transform accepts time & event values
@@ -63,7 +71,7 @@ def test_surv_df():
     res = surv(time=df['time'], event_status=df['event_value'])
     eq_(res.shape[1], 2)
     eq_(res.shape[0], len(df.index))
-    ok_(array_equal(res.columns, ['event_status', 'event_time']))
+    ok_(array_equal(res.columns, ['event_status', 'time']))
     eq_(np.sum(res['event_status']), np.sum(df['event_value']))
 
 def test_surv_df_subject():
@@ -76,8 +84,8 @@ def test_surv_df_subject():
     eq_(res.shape[0], len(df.index))
     ok_(array_equal(res.columns, ['event_status', 'subject_id',
                                   'timepoint_id']))
-    ok_(check_valid_id(res['subject_id'], ref=df['subject_id']))
-    ok_(check_valid_id(res['timepoint_id'], ref=df['time']))
+    check_valid_id(res['subject_id'], ref=df['subject_id'])
+    check_valid_id(res['timepoint_id'], ref=df['time'])
     eq_(np.sum(res['event_status']), np.sum(df['event_value']))
 
 def test_surv_df_formula():
@@ -92,14 +100,14 @@ def test_surv_df_formula():
 
 def test_surv_df_subject_formula():
     df = get_test_data()
-    y, X = patsy.dmatrices('surv(time=time, event_status=event_value,
-                                  subject=subject_id) ~ X1', data=df)
+    formula = 'surv(time=time, event_status=event_value, subject=subject_id) ~ X1'
+    y, X = patsy.dmatrices(formula, data=df)
     res = pd.DataFrame(y)
     # test quality of res
     eq_(res.shape[1], 3)
     eq_(res.shape[0], len(df.index))
-    ok_(check_valid_id(res[1], ref=df['subject_id']))
-    ok_(check_valid_id(res[2], ref=df['time']))
+    check_valid_id(res[1], ref=df['subject_id'])
+    check_valid_id(res[2], ref=df['time'])
     eq_(np.sum(res[0]), np.sum(df['event_value']))
     # test whether class ids are retained when predicting new data
     (y.new, X.new) = patsy.build_design_matrices([y.design_info,
