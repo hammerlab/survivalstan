@@ -3,6 +3,11 @@ import patsy
 import sys
 import numpy as np
 
+from .survivalstan import _prep_timepoint_dataframe
+
+import logging
+logger = logging.getLogger(__name__)
+
 class Id(object):
     def __init__(self, desc='id'):
         self.values = []
@@ -86,7 +91,7 @@ class Surv(object):
         self.timepoint_id.memorize_finish()
 
     def _prep_timepoint_standata(self, timepoint_df):
-        unique_timepoints = survivalstan.survivalstan._prep_timepoint_dataframe(
+        unique_timepoints = _prep_timepoint_dataframe(
             timepoint_df,
             timepoint_id_col='id',
             timepoint_end_col='value')
@@ -158,4 +163,57 @@ class Surv(object):
                                   meta_data=meta_data, stan_data=stan_data))
 
 surv = patsy.stateful_transform(Surv)
+
+class SurvivalFactor(patsy.EvalFactor):
+    ''' A factor object to encode LHS variables
+        for Survival Models, including model type
+    '''
+    _is_survival = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._class = None
+
+    def eval(self, *args, **kwargs):
+        result = super().eval(*args, **kwargs)
+        try:
+            self._class = result.__class__
+        except:
+            logger.warning('Outcome class could not be determined')
+        if isinstance(result, SurvData):
+            self._type = result.survival_type
+            self._meta_data = result.meta_data
+            self._stan_data = result.stan_data
+
+        return result
+
+class SurvivalModelDesc(object):
+    ''' A ModelDesc class to force use of SurvivalFactor when encoding LHS
+        variables for a SurvivalModel
+
+        Example:
+            
+            # simple survival model
+            my_formula = SurvivalModelDesc('surv(time=time,
+                event_status=event_value) ~ X1')
+            y, X = patsy.dmatrices(my_formula, data=df)
+
+            # with a subject id
+            my_formula2 = SurvivalModelDesc('surv(time=time,
+                    event_status=event_value, subject=subject_id) ~ X1')
+            y2, X2 = patsy.dmatrices(my_formula2, data=df)
+
+            # saves information about class & type of survival model
+            y2.design_info.terms[0].factors[0]._class
+            y2.design_info.terms[0].factors[0]._type
+    '''
+    def __init__(self, formula):
+        self.formula = formula
+        self.lhs, self.rhs = re.split(string=formula, pattern='~', maxsplit=1)
+        self.lhs_termlist = [patsy.Term([SurvivalFactor(self.lhs)])]
+        self.rhs_termlist = patsy.ModelDesc.from_formula(self.rhs).rhs_termlist
+
+    def __patsy_get_model_desc__(self, eval_env):
+        return patsy.ModelDesc(self.lhs_termlist, self.rhs_termlist)
+
 
