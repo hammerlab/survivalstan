@@ -19,7 +19,7 @@ def _summarize_survival(df, time_col, event_col, evaluate_at=None):
     table = survival_table_from_events(df[time_col], df[event_col])
     table.reset_index(inplace=True)
     ## normalize survival as fraction of initial_n
-    table['initial_n'] = table.loc[table['event_at'] == 0.0,'at_risk'][0]
+    table['initial_n'] = max(table.at_risk)
     table['survival'] = table.apply(lambda row: row['at_risk']/row['initial_n'], axis=1)
     ## handle timepoints if given
     if evaluate_at is not None:
@@ -394,8 +394,8 @@ def prep_pp_data(models, time_element='y_hat_time',
     return data
 
 
-def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_hat_event',
-                         time_col='event_time', event_col='event_status',
+def prep_pp_survival_data(models=None, time_element='y_hat_time', event_element='y_hat_event',
+                         time_col='event_time', event_col='event_status', pp_data=None,
                          by=None, **kwargs):
     ''' Summarize posterior-predicted values into KM survival/censor rates
             by group, for each model given in the list of `models`.
@@ -404,9 +404,16 @@ def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_ha
             
         **Parameters**:
             
-            :param models: list of `fit_stan_survival_model` results from which to extract posterior-predicted values
+            :param models: list of `fit_stan_survival_model` results from which
+            to extract posterior-predicted values. If `None` provided, then
+            `pp_data` must be given.
             :type models: list
             
+            :param pp_data: (optional) data frame containing
+            posterior-predicted values. If None, then `models` must be
+            provided.
+            :type pp_data: pandas.DataFrame
+
             :param by: additional column or columns by which to summarize posterior-predicted values.
                 Default is None, which results in draws summarized by [`iter` and `model_cohort`].
                 Values can include any covariates provided in the original df.
@@ -437,8 +444,9 @@ def prep_pp_survival_data(models, time_element='y_hat_time', event_element='y_ha
             
             :returns: pandas.DataFrame with one record per posterior draw (iter), timepoint, model_cohort, and by-groups.
     '''
-    pp_data = prep_pp_data(models, time_element=time_element,
-                           event_element=event_element, time_col=time_col, event_col=event_col, **kwargs)
+    if pp_data is None:
+        pp_data = prep_pp_data(models, time_element=time_element,
+                               event_element=event_element, time_col=time_col, event_col=event_col, **kwargs)
     groups = ['iter', 'model_cohort']
     if by and isinstance(by, str):
         groups.append(by)
