@@ -21,6 +21,7 @@ env:
   - TEST=test/test_byo-gamma_survival_model.py
   - TEST=test/test_byo-gamma_survival_model_sim.py
   - TEST=test/test_jointmodel_datasets.py
+  - TEST=test/test_formulas.py
 before_install:
   # Commands below copied from: http://conda.pydata.org/docs/travis.html
   # We do this conditionally because it saves us some downloading if the
