@@ -111,8 +111,70 @@ def test_surv_df_subject_formula():
     eq_(np.sum(res[0]), np.sum(df['event_value']))
     # test whether class ids are retained when predicting new data
     (y.new, X.new) = patsy.build_design_matrices([y.design_info,
-                                                   X.design_info], df.tail()) 
+                                                   X.design_info], df.tail(n=50))
     res2 = pd.DataFrame(y.new)
     resm = pd.merge(res, res2, on=[1,2], how='inner')
+    ok_(array_equal(resm['0_x'], resm['0_y']))
+
+def test_SurvivalFactor_formula():
+    # basic SurvivalFactor class
+    a = SurvivalFactor(code='surv(time=time, event_status=event_value)')
+    ok_(a._class is None)
+    # test with generic ModelDesc function
+    md = patsy.ModelDesc([patsy.Term([a])],[])
+    df = get_test_data()
+    y, X = patsy.dmatrices(md, data=df)
+    eq_(y.shape[1], 2)
+    eq_(y.shape[0], len(df.index))
+    ok_(y.design_info.terms[0].factors[0]._is_survival) ## should be True
+    eq_(y.design_info.terms[0].factors[0]._class, SurvData)
+    eq_(y.design_info.terms[0].factors[0]._type, 'wide')
+
+def test_SurvivalModelDesc_wide():
+    df = get_test_data()
+    formula = 'surv(time=time, event_status=event_value) ~ X1'
+    my_formula = SurvivalModelDesc(formula)
+    y, X = patsy.dmatrices(my_formula, data=df)
+    # inspect data frame
+    eq_(y.shape[1], 2)
+    eq_(y.shape[0], len(df.index))
+    # should only be one LHS term
+    eq_(len(y.design_info.terms), 1)
+    # should only be one LHS factor
+    eq_(len(y.design_info.terms[0].factors), 1)
+    # LHS should be of type 'survival' (wide)
+    ok_(y.design_info.terms[0].factors[0]._is_survival == True)
+    eq_(y.design_info.terms[0].factors[0]._class, SurvData)
+    eq_(y.design_info.terms[0].factors[0]._type, 'wide')
+    # stan_data & meta-data should be empty
+    eq_(y.design_info.terms[0].factors[0]._stan_data, {})
+    eq_(y.design_info.terms[0].factors[0]._meta_data, {})
+
+def test_SurvivalModelDesc_long():
+    df = get_test_data()
+    formula = 'surv(time=time, event_status=event_value, subject=subject_id) ~ X1'
+    my_formula = SurvivalModelDesc(formula)
+    y, X = patsy.dmatrices(my_formula, data=df)
+    # confirm shape of data returned
+    eq_(y.shape[1], 3)
+    eq_(y.shape[0], len(df.index))
+    ok_(y.design_info.terms[0].factors[0]._is_survival) ## should be True
+    eq_(y.design_info.terms[0].factors[0]._class, LongSurvData)
+    eq_(y.design_info.terms[0].factors[0]._type, 'long')
+    # look for stan_data
+    stan_data = y.design_info.terms[0].factors[0]._stan_data
+    ok_([key in stan_data.keys() for key in ['t_obs', 't_dur', 'T', 'S']])
+    # look for meta-data
+    meta_data = y.design_info.terms[0].factors[0]._meta_data
+    ok_([key in meta_data.keys() for key in ['timepoint_id', 'subject_id']])
+    # can we extract meta-data?
+    eq_(meta_data['subject_id'].shape[1], 2)
+    # test ability to build design matrices on new data
+    y.new, X.new = patsy.build_design_matrices(design_infos=[y.design_info,
+                                                              X.design_info],
+                                                data=df.tail(n=50))
+    res1 = pd.DataFrame(y)
+    res2 = pd.DataFrame(y.new)
+    resm = pd.merge(res1, res2, on=[1, 2], how='inner')
     ok_(array_equal(resm['0_x'], resm['0_y']))
 
