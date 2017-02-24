@@ -2,6 +2,7 @@ import pandas as pd
 import patsy
 import sys
 import numpy as np
+import re
 
 from .survivalstan import _prep_timepoint_dataframe
 
