@@ -149,7 +149,7 @@ class Surv(object):
             stan_data.update({'S': self.subject_id.len()})
         if 'group' in kwargs.keys():
             group_id = self.group_id.transform(kwargs['group'])
-            stan_data.update({'G': len(self.group_id.len())})
+            stan_data.update({'G': self.group_id.len()})
             meta_data.update({'group_id': self.group_id.decode_df()})
         else:
             group_id = None
