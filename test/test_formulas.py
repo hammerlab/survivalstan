@@ -178,3 +178,20 @@ def test_SurvivalModelDesc_long():
     resm = pd.merge(res1, res2, on=[1, 2], how='inner')
     ok_(array_equal(resm['0_x'], resm['0_y']))
 
+def test_SurvivalModelDesc_long_with_group():
+    df = get_test_data()
+    formula = 'surv(time=time, event_status=event_value, subject=subject_id, group=subject_id) ~ X1'
+    my_formula = SurvivalModelDesc(formula)
+    y, X = patsy.dmatrices(my_formula, data=df)
+    eq_(y.shape[1], 4)
+    eq_(y.shape[0], len(df.index))
+    ok_(y.design_info.terms[0].factors[0]._is_survival)
+    eq_(y.design_info.terms[0].factors[0]._class, LongSurvData)
+    eq_(y.design_info.terms[0].factors[0]._type, 'long')
+    stan_data = y.design_info.terms[0].factors[0]._stan_data
+    ok_([key in stan_data.keys() for key in ['t_obs', 't_dur', 'T', 'S', 'G']])
+    meta_data = y.design_info.terms[0].factors[0]._meta_data
+    ok_([key in meta_data.keys() for key in ['timepoint_id', 'subject_id', 'group_id']])
+
+
+
