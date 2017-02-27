@@ -157,7 +157,7 @@ class Surv(object):
             dm.index = event_status.index
             # prep stan_data inputs
             stan_data.update({
-                    'y': dm['event_status'].values.astype(int),
+                    'event': dm['event_status'].values.astype(int),
                     't': dm['timepoint_id'].values.astype(int),
                     's': dm['subject_id'].values.astype(int),
                     'N': len(dm.index),

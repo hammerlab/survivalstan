@@ -199,7 +199,7 @@ def test_SurvivalModelDesc_long(df=get_test_data()):
     # look for stan_data
     stan_data = y.design_info.terms[0].factors[0]._stan_data
     _dict_keys_include(stan_data,
-                        ['t_obs','t_dur','T','S','N'])
+                        ['t_obs','t_dur','T','S','N','event','t','s'])
     # look for meta-data
     meta_data = y.design_info.terms[0].factors[0]._meta_data
     _dict_keys_include(meta_data, ['timepoint_id', 'subject_id'])
@@ -226,7 +226,8 @@ def test_SurvivalModelDesc_long_with_group():
     eq_(y.design_info.terms[0].factors[0]._type, 'long')
     stan_data = y.design_info.terms[0].factors[0]._stan_data
     _dict_keys_include(stan_data,
-                       ['t_obs', 't_dur', 'T', 'S', 'G', 'N'])
+                       ['t_obs', 't_dur', 'T', 'S', 'G', 'N', 'event',
+                        't', 's', 'g'])
     meta_data = y.design_info.terms[0].factors[0]._meta_data
     _dict_keys_include(meta_data,
                        ['timepoint_id', 'subject_id', 'group_id'])
