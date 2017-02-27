@@ -245,14 +245,25 @@ class Surv(object):
 
 surv = patsy.stateful_transform(Surv)
 
+def _get_args(s):
+    ''' Given a string of named code, return dict of named arguments
+    '''
+    pattern = r'(\w[\w\d_]*)\((.*)\)$'
+    match = re.match(pattern, s)
+    if match and len(match.groups())==2:
+        return dict(re.findall(r'(\S+)=(".*?"|[^ ,]+)', match.groups()[1]))
+    elif match is not None:
+        return list(match.groups())
+    else:
+        return []
+
 class SurvivalFactor(patsy.EvalFactor):
     ''' A factor object to encode LHS variables
         for Survival Models, including model type
     '''
-    _is_survival = True
-
     def __init__(self, *args, **kwargs):
         super(SurvivalFactor, self).__init__(*args, **kwargs)
+        self._is_survival = False
         self._class = None
 
     def eval(self, *args, **kwargs):
@@ -262,6 +273,8 @@ class SurvivalFactor(patsy.EvalFactor):
         except:
             logger.warning('Outcome class could not be determined')
         if isinstance(result, SurvData):
+            self.code_args = _get_args(self.code)
+            self._is_survival = True
             self._type = result.survival_type
             self._meta_data = result.meta_data
             self._stan_data = result.stan_data
