@@ -731,7 +731,8 @@ def _prep_data_for_baseline_hazard(models, element='baseline'):
     return 'log_hazard', 'end_time_id', df
 
 
-def plot_coefs(models, element='coefs', force_direction=None, trans=None, **kwargs):
+def plot_coefs(models, element='coefs', force_direction=None, trans=None,
+               by=None, **kwargs):
     """
     Plot coefficients for models listed
 
@@ -755,26 +756,24 @@ def plot_coefs(models, element='coefs', force_direction=None, trans=None, **kwar
         If present, transforms value of `value` column
             - example: np.exp to plot exp(beta)
         if None (default), plots raw value
-
+    by (str):
+        name of variable by which to color boxplots. E.g. 'group' if plotting
+        grp_coefs. Defaults to None for single model, or 'model_cohort' for
+        multiple models.
     """
-
     # TODO: check if models object is a list or a single model
-    
     if element=='beta_time':
         return plot_time_betas(models=models, element=element, trans=trans, **kwargs)
-    
     # prep data from models given
     if element=='baseline' or element=='baseline_raw':
         value, variable, df = _prep_data_for_baseline_hazard(models, element=element)
     else:
         value, variable, df = _prep_data_for_coefs(models=models, element=element)
-    
     if trans:
         df[value] = trans(df[value])
-
     # select hue depending on number of elements
     if len(models)==1:
-        hue = None
+        hue = by
     else:
         hue = 'model_cohort'
 
