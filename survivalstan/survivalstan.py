@@ -262,6 +262,9 @@ class SurvivalStanData:
         self.group_col = group_col
         self.timepoint_end_col = timepoint_end_col
         self.sample_col = sample_col
+        self.sample_id_col = sample_id_col
+        self.group_id_col = group_id_col
+        self.timepoint_id_col = timepoint_id_col
         self.drop_intercept = drop_intercept
         ## prepare data
         self.prep_survival_formula()
@@ -294,6 +297,7 @@ class SurvivalStanData:
             formula_like=SurvivalModelDesc(self.surv_formula),
             data=self.df,
             )
+        ## TODO update object columns with names of elements (e.g. group_col)
 
     def prep_df_nonmiss(self):
         ''' Create x_df and df_nonmiss
@@ -321,11 +325,22 @@ class SurvivalStanData:
         for decode in decode_objects.keys():
             if decode in mdata.keys():
                 decode_df = mdata[decode]
-                decode_df.rename(columns={'id': decode,
-                                          'value': decode_objects[decode]},
+                decode_id_col = decode
+                decode_col = decode_objects[decode]
+                decode_df.rename(columns={'id': decode_id_col,
+                                          'value': decode_col},
                                 inplace=True)
                 self.df_nonmiss = pd.merge(self.df_nonmiss, decode_df,
-                                           on=decode, how='outer')
+                                           on=decode_id_col, how='outer')
+                if decode == 'subject_id':
+                    self.subject_id_col = decode_id_col
+                    self.subject_col = decode_col
+                if decode == 'group_id':
+                    self.group_id_col = decode_id_col
+                    self.group_col = decode_col
+                if decode == 'timepoint_id':
+                    self.timepoint_id_col = decode_id_col
+                    self.timepoint_end_col = decode_col
 
     def prep_stan_data(self, **kwargs):
         ''' Prep data dictionary to pass to stan.fit
