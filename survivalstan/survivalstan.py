@@ -228,7 +228,7 @@ def _gen_lhs_formula(event_col, time_col=None, group_col=None,
         pars.update({'group': group_col})
     # subject column
     if sample_col:
-        pars.update({'sample': sample_col})
+        pars.update({'subject': sample_col})
     # timepoint end col
     if timepoint_end_col:
         pars.update({'time': timepoint_end_col})
@@ -313,9 +313,9 @@ class SurvivalStanData:
         ''' add ID decodes to df_nonmiss
         '''
         # name object decode for user-provided subject, group & timepoint cols
-        decode_objects = {'subject_id': self.sample_col,
-                          'group_id': self.group_col,
-                          'timepoint_id': self.timepoint_end_col
+        decode_objects = {'subject_id': 'subject',
+                          'group_id': 'group',
+                          'timepoint_id': 'timepoint_end',
                          }
         mdata = self.y.design_info.terms[0].factors[0]._meta_data
         for decode in decode_objects.keys():
@@ -325,7 +325,7 @@ class SurvivalStanData:
                                           'value': decode_objects[decode]},
                                 inplace=True)
                 self.df_nonmiss = pd.merge(self.df_nonmiss, decode_df,
-                                           on=decode, how=outer)
+                                           on=decode, how='outer')
 
     def prep_stan_data(self, **kwargs):
         ''' Prep data dictionary to pass to stan.fit
