@@ -166,10 +166,12 @@ class Surv(object):
                 stan_data.update({'g': dm['group_id'].values.astype(int)})
             meta_data.update({'df': dm})
         else:
-            if group_id is not None:
-                dm = np.append(timepoint_id, event_status.astype(int), subject_id, group_id, 1)
-            else:
-                dm = np.append(timepoint_id, event_status.astype(int), subject_id, 1)
+            raise ValueError('non-pandas use case not supported yet. Please ',
+                             'import pandas to use `surv`')
+            #if group_id is not None:
+                #dm = np.append(timepoint_id, event_status.astype(int), subject_id, group_id, 1)
+            #else:
+                #dm = np.append(timepoint_id, event_status.astype(int), subject_id, 1)
             stan_data.update({
                     'y': event_status.astype(int),
                     't': timepoint_id,
@@ -199,11 +201,13 @@ class Surv(object):
                 stan_data.update({'g': dm['group_id'].values.astype(int)})
             meta_data.update({'df': dm})
         else:
+            raise ValueError('non-pandas usage not yet supported. Please',
+                             ' import pandas library to use `surv` syntax')
             # prep np array
-            if group_id is not None:
-                dm = np.append(time, event_status.astype(int), group_id, 1)
-            else:
-                dm = np.append(time, event_status.astype(int), 1)
+            #if group_id is not None:
+            #    dm = np.append(time, event_status.astype(int), group_id, 1)
+            #else:
+            #    dm = np.append(time, event_status.astype(int), 1)
             # prep stan_data object
             stan_data.update({'y': time, 'event': event_status.astype(int), 'N': len(time)})
             if group_id is not None:

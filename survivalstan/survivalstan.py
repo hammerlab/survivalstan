@@ -591,7 +591,7 @@ def prep_data_long_surv(df, time_col, event_col, sample_col=None,
     '''
     ## process multiple event_names, if given:
     if event_name:
-        if notsample_col:
+        if not sample_col:
             raise ValueError('Sample col is required to process multiple events')
         df_events = pd.pivot_table(df,
                                    index=[sample_col, time_col],
