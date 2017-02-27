@@ -336,6 +336,7 @@ class SurvivalStanData:
         # use x_df for now to handle drop_intercept correctly
         self.data.update({
             'x': self.x_df.as_matrix(),
+            'M': self.x_df.shape[1]
         })
         if dict(**kwargs):
             self.data.update(dict(**kwargs))
