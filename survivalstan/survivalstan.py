@@ -319,7 +319,7 @@ class SurvivalStanData:
         # name object decode for user-provided subject, group & timepoint cols
         decode_objects = {'subject_id': 'subject',
                           'group_id': 'group',
-                          'timepoint_id': 'timepoint_end',
+                          'timepoint_id': 'end_time',
                          }
         mdata = self.y.design_info.terms[0].factors[0]._meta_data
         for decode in decode_objects.keys():
@@ -333,15 +333,17 @@ class SurvivalStanData:
                 self.df_nonmiss = pd.merge(self.df_nonmiss, decode_df,
                                            on=decode_id_col, how='outer')
                 if decode == 'subject_id':
-                    self.subject_id_col = decode_id_col
-                    self.subject_col = decode_col
+                    self.sample_id_col = decode_id_col
+                    self.sample_col = decode_col
                 if decode == 'group_id':
                     self.group_id_col = decode_id_col
                     self.group_col = decode_col
+                    self._prep_grp_names()
                 if decode == 'timepoint_id':
                     self.timepoint_id_col = decode_id_col
                     self.timepoint_end_col = decode_col
-
+                    self._prep_timepoint_df()
+    
     def prep_stan_data(self, **kwargs):
         ''' Prep data dictionary to pass to stan.fit
         '''
@@ -355,51 +357,27 @@ class SurvivalStanData:
         })
         if dict(**kwargs):
             self.data.update(dict(**kwargs))
-
+    
+    def _prep_grp_names(self):
+        ''' Populate grp_names attribute
+        '''
+        self.grp_names = self.df_nonmiss.loc[
+                        ~self.df_nonmiss[[self.group_id_col]].duplicated()].sort_values(self.group_id_col)[self.group_col].values
+    
     def get_group_names(self):
         if not self.group_id_col:
             return(None)
-        # which column should describe group names
-        if self.group_col:
-            grp_desc = self.group_col
-        else:
-            grp_desc = self.group_id_col
-        # group names in order of id
-        self.grp_names = self.df_nonmiss.loc[
-            ~self.df_nonmiss[[self.group_id_col]].duplicated()].sort_values(self.group_id_col)[grp_desc].values
         return(self.grp_names)
-
-    def _prep_timepoint_data(self):
-        ''' Add timepoint-id-related data to input vector
+    
+    def _prep_timepoint_df(self):
+        ''' Add timepoint-id-related data to self.timepoint_df
         '''
         unique_timepoints = _prep_timepoint_dataframe(self.df_nonmiss,
                                                       timepoint_id_col=self.timepoint_id_col,
                                                       timepoint_end_col=self.timepoint_end_col
                                                      )
-        timepoint_input_data = {
-            't_dur': unique_timepoints['t_dur'],
-            't_obs': unique_timepoints[self.timepoint_end_col],
-            'T': len(unique_timepoints.index)
-        }
         unique_timepoints.reset_index(inplace=True)
         self.timepoint_df = unique_timepoints
-        self.data.update(timepoint_input_data)
-
-    def _prep_sample_data(self):
-        ''' Prep per-sample input data
-        '''
-        sample_input_data = {
-            'S': len(self.df_nonmiss[self.sample_id_col].unique())
-        }
-        self.data.update(sample_input_data)
-
-    def _prep_group_data(self):
-        ''' Prep per-group input data
-        '''
-        group_input_data = {
-            'G': len(self.df_nonmiss[self.group_id_col].unique())
-        }
-        self.data.update(group_input_data)
 
 def _extract_grp_coefs(survival_fit, element, grp_coef_type, grp_names, columns, input_data, model_cohort):
     """ Helper function to extract grp coefs summary data
