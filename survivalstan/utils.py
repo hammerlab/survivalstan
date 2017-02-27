@@ -697,6 +697,16 @@ def _prep_data_for_coefs(models, element):
     return 'value', 'variable', df
 
 
+def _get_parameter_from_model_list(models, parameter):
+    ''' Return parameter name if similar for all models
+    '''
+    values = np.unique([model[parameter] for model in models])
+    if len(values)>1:
+        raise ValueError('Inconsistent data for {}'.format(parameter))
+    elif len(values)==0:
+        raise ValueError('No data for {}.'.format(parameter))
+    return(values[0])
+
 def _prep_data_for_baseline_hazard(models, element='baseline'):
     """ 
     Helper function to concatenate/extract baseline hazard data 
@@ -710,11 +720,14 @@ def _prep_data_for_baseline_hazard(models, element='baseline'):
     df_list = list()
     [df_list.append(extract_baseline_hazard(model, element=element)) for model in models]
     df = pd.concat(df_list)
+    timepoint_id_col = _get_parameter_from_model_list(models, 'timepoint_id_col')
+    timepoint_end_col = _get_parameter_from_model_list(models,
+                                                       'timepoint_end_col')
 
     # add helper variables to df
-    df['timepoint_id'] = df['timepoint_id'].astype('category')
+    df[timepoint_id_col] = df[timepoint_id_col].astype('category')
     df['log_hazard'] = np.log1p(df['baseline_hazard'])
-    df['end_time_id'] = df['end_time'].astype('category')
+    df['end_time_id'] = df[timepoint_end_col].astype('category')
     return 'log_hazard', 'end_time_id', df
 
 
