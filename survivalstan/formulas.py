@@ -83,7 +83,7 @@ class SurvData(pd.DataFrame):
             del my_kwargs['meta_data']
         else:
             meta_data = dict()
-        super().__init__(*args, **my_kwargs)
+        super(SurvData, self).__init__(*args, **my_kwargs)
         self.stan_data = stan_data
         self.meta_data = meta_data
 
