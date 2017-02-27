@@ -205,6 +205,7 @@ def test_SurvivalModelDesc_long(df=get_test_data()):
     _dict_keys_include(meta_data, ['timepoint_id', 'subject_id'])
     # can we extract meta-data?
     eq_(meta_data['subject_id'].shape[1], 2)
+    eq_(meta_data['subject_id'].shape[0], 100) ## because simulated N=100
     # test ability to build design matrices on new data
     y.new, X.new = patsy.build_design_matrices(design_infos=[y.design_info,
                                                               X.design_info],

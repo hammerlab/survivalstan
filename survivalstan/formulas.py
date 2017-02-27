@@ -63,7 +63,9 @@ class Id(object):
         return len(self.ids)
 
     def decode_df(self):
-        return pd.DataFrame({'id': self.ids, 'value': self.values})
+        df = pd.DataFrame({'id': self.ids, 'value': self.values})
+        df.dropna(inplace=True)
+        return df
 
 as_id = patsy.stateful_transform(Id)
 
