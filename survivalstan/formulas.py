@@ -71,7 +71,7 @@ class SurvData(pd.DataFrame):
     ''' patsy.DesignMatrix representing survival data output '''
     survival_type = 'wide'
 
-    def __init__(self, *args, stan_data=dict(), meta_data=dict(), **kwargs):
+    def __init__(self, stan_data=dict(), meta_data=dict(), *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stan_data = stan_data
         self.meta_data = meta_data
