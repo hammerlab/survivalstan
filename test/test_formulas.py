@@ -130,6 +130,9 @@ def test_SurvivalFactor_formula():
     eq_(y.design_info.terms[0].factors[0]._class, SurvData)
     eq_(y.design_info.terms[0].factors[0]._type, 'wide')
 
+def _test_keys_include(obj, incl):
+    ok_([key in obj.keys() for key in incl])
+
 def test_SurvivalModelDesc_wide():
     df = get_test_data()
     formula = 'surv(time=time, event_status=event_value) ~ X1'
@@ -147,8 +150,10 @@ def test_SurvivalModelDesc_wide():
     eq_(y.design_info.terms[0].factors[0]._class, SurvData)
     eq_(y.design_info.terms[0].factors[0]._type, 'wide')
     # stan_data & meta-data should be empty
-    eq_(y.design_info.terms[0].factors[0]._stan_data, {})
-    eq_(y.design_info.terms[0].factors[0]._meta_data, {})
+    _test_keys_include(obj=y.design_info.terms[0].factors[0]._stan_data,
+                       incl=['event', 'y'])
+    _test_keys_include(obj=y.design_info.terms[0].factors[0]._meta_data,
+                       incl=['df'])
 
 def test_SurvivalModelDesc_long():
     df = get_test_data()

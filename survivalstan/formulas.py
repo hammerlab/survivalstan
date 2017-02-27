@@ -3,11 +3,41 @@ import patsy
 import sys
 import numpy as np
 import re
-
-from .survivalstan import _prep_timepoint_dataframe
-
 import logging
 logger = logging.getLogger(__name__)
+
+def _prep_timepoint_dataframe(df,
+                              timepoint_end_col,
+                              timepoint_id_col = None
+                              ):
+    """ Helper function to take a set of timepoints
+        in observation-level dataframe & return
+        formatted timepoint_id, end_time, duration
+
+        Returns
+        ---------
+        pandas dataframe with one record per timepoint_id
+            where timepoint_id is the index
+            sorted on the index, increasing
+
+    """
+    time_df = df.copy()
+    time_df.sort_values(timepoint_end_col, inplace=True)
+    if not(timepoint_id_col):
+        timepoint_id_col = 'timepoint_id'
+        time_df[timepoint_id_col] = time_df[timepoint_end_col].astype('category').cat.codes + 1
+    time_df.dropna(how='any', subset=[timepoint_id_col, timepoint_end_col], inplace=True)
+    time_df = time_df.loc[:,[timepoint_id_col, timepoint_end_col]].drop_duplicates()
+    time_df[timepoint_end_col] = time_df[timepoint_end_col].astype(np.float32)
+    time_df.set_index(timepoint_id_col, inplace=True, drop=True)
+    time_df.sort_index(inplace=True)
+    t_durs = time_df.diff(periods=1)
+    t_durs.rename(columns = {timepoint_end_col: 't_dur'}, inplace=True)
+    time_df = time_df.join(t_durs)
+    if len(time_df.index)>1:
+        time_df.fillna(inplace=True, value=time_df.loc[1, timepoint_end_col])
+    return(time_df)
+
 
 class Id(object):
     def __init__(self, desc='id'):
@@ -103,7 +133,8 @@ class Surv(object):
         }
         return timepoint_input_data
 
-    def _prep_long(self, timepoint_id, event_status, subject_id, group_id=None, **kwargs):
+    def _prep_long(self, timepoint_id, event_status, subject_id, group_id=None,
+                   stan_data=dict(), meta_data=dict(), **kwargs):
         if patsy.util.have_pandas:
             dm = {'timepoint_id': timepoint_id,
                   'event_status': event_status,
@@ -113,15 +144,35 @@ class Surv(object):
                 dm.update({'group_id': group_id})
             dm = pd.DataFrame(dm)
             dm.index = event_status.index
+            # prep stan_data inputs
+            stan_data.update({
+                    'y': dm['event_status'].values.astype(int),
+                    't': dm['timepoint_id'].values.astype(int),
+                    's': dm['subject_id'].values.astype(int),
+                    'N': len(dm.index),
+                    })
+            if group_id is not None:
+                stan_data.update({'g': dm['group_id'].values.astype(int)})
+            meta_data.update({'df': dm})
         else:
             if group_id is not None:
                 dm = np.append(timepoint_id, event_status, subject_id, group_id, 1)
             else:
                 dm = np.append(timepoint_id, event_status, subject_id, 1)
-        return LongSurvData(dm, **kwargs)
+            stan_data.update({
+                    'y': event_status,
+                    't': timepoint_id,
+                    's': subject_id,
+                    'N': len(event_status),
+                    })
+            if group_id is not None:
+                stan_data.update({'g': group_id})
+        return LongSurvData(dm, stan_data=stan_data, meta_data=meta_data, **kwargs)
 
-    def _prep_wide(self, time, event_status, group_id=None, **kwargs):
+    def _prep_wide(self, time, event_status, group_id=None,
+                   stan_data=dict(), meta_data=dict(), **kwargs):
         if patsy.util.have_pandas:
+            # prep pandas dataframe
             dm = {'time': time,
                  'event_status': event_status,
                  }
@@ -129,12 +180,24 @@ class Surv(object):
                 dm.update({'group_id': group_id})
             dm = pd.DataFrame(dm)
             dm.index = time.index
+            # prep stan_data object
+            stan_data.update({'y': dm['time'].values.astype(float),
+                              'event': dm['event_status'].values.astype(int),
+                              'N': len(dm.index)})
+            if group_id is not None:
+                stan_data.update({'g': dm['group_id'].values.astype(int)})
+            meta_data.update({'df': dm})
         else:
+            # prep np array
             if group_id is not None:
                 dm = np.append(time, event_status, group_id, 1)
             else:
                 dm = np.append(time, event_status, 1)
-        return SurvData(dm, **kwargs)
+            # prep stan_data object
+            stan_data.update({'y': time, 'event': event_status, 'N': len(time)})
+            if group_id is not None:
+                stan_data.update({'g': group_id})
+        return SurvData(dm, stan_data=stan_data, meta_data=meta_data, **kwargs)
 
     def transform(self, time, event_status, **kwargs):
         kwargs = self._check_kwargs(**kwargs)
@@ -210,7 +273,11 @@ class SurvivalModelDesc(object):
     '''
     def __init__(self, formula):
         self.formula = formula
-        self.lhs, self.rhs = re.split(string=formula, pattern='~', maxsplit=1)
+        try:
+            self.lhs, self.rhs = re.split(string=formula, pattern='~', maxsplit=1)
+        except ValueError:
+            self.rhs = formula
+            self.lhs = ''
         self.lhs_termlist = [patsy.Term([SurvivalFactor(self.lhs)])]
         self.rhs_termlist = patsy.ModelDesc.from_formula(self.rhs).rhs_termlist
 
