@@ -137,7 +137,7 @@ class Surv(object):
                    stan_data=dict(), meta_data=dict(), **kwargs):
         if patsy.util.have_pandas:
             dm = {'timepoint_id': timepoint_id,
-                  'event_status': event_status,
+                  'event_status': event_status.astype(int),
                   'subject_id': subject_id
                   }
             if group_id is not None:
@@ -156,11 +156,11 @@ class Surv(object):
             meta_data.update({'df': dm})
         else:
             if group_id is not None:
-                dm = np.append(timepoint_id, event_status, subject_id, group_id, 1)
+                dm = np.append(timepoint_id, event_status.astype(int), subject_id, group_id, 1)
             else:
-                dm = np.append(timepoint_id, event_status, subject_id, 1)
+                dm = np.append(timepoint_id, event_status.astype(int), subject_id, 1)
             stan_data.update({
-                    'y': event_status,
+                    'y': event_status.astype(int),
                     't': timepoint_id,
                     's': subject_id,
                     'N': len(event_status),
@@ -174,7 +174,7 @@ class Surv(object):
         if patsy.util.have_pandas:
             # prep pandas dataframe
             dm = {'time': time,
-                 'event_status': event_status,
+                 'event_status': event_status.astype(int),
                  }
             if group_id is not None:
                 dm.update({'group_id': group_id})
@@ -190,11 +190,11 @@ class Surv(object):
         else:
             # prep np array
             if group_id is not None:
-                dm = np.append(time, event_status, group_id, 1)
+                dm = np.append(time, event_status.astype(int), group_id, 1)
             else:
-                dm = np.append(time, event_status, 1)
+                dm = np.append(time, event_status.astype(int), 1)
             # prep stan_data object
-            stan_data.update({'y': time, 'event': event_status, 'N': len(time)})
+            stan_data.update({'y': time, 'event': event_status.astype(int), 'N': len(time)})
             if group_id is not None:
                 stan_data.update({'g': group_id})
         return SurvData(dm, stan_data=stan_data, meta_data=meta_data, **kwargs)

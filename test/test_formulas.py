@@ -11,6 +11,13 @@ def get_test_data():
                   data['covars'], on='subject_id')
     return(df)
 
+def get_alt_test_data():
+    ''' Return test data with event coded as boolean
+    '''
+    data = get_test_data()
+    data['event_value'] = data['event_value'] == 1
+    return(data)
+
 def test_as_id_str():
     ''' Test that as_id uniquely enumerates strings
     '''
@@ -44,11 +51,16 @@ def test_as_id_formula():
     check_valid_id(res[2], ref=df['subject_id'])
 
 def is_sequential(x):
+    ''' helper function to determine if set of list elements
+        form a sequential set
+    '''
     it = (int(el) for el in sorted(set(x)))
     first = next(it)
     return all(a == b for a, b in enumerate(it, first + 1))
 
 def test_is_sequential():
+    ''' test whether is_sequential test logic is correct
+    '''
     x = [1, 2, 3, 3, 5, 4]
     ok_(is_sequential(x))
     y = [1, 3, 4]
@@ -64,15 +76,19 @@ def check_valid_id(x, ref=None):
         eq_(np.max(x), len(x.unique()))
     return(True)
 
-def test_surv_df():
-    ''' test that surv stateful transform accepts time & event values
+def test_surv_df(df=get_test_data()):
+    ''' test surv_df: that surv stateful transform accepts time & event values
     '''
-    df = get_test_data()
     res = surv(time=df['time'], event_status=df['event_value'])
     eq_(res.shape[1], 2)
     eq_(res.shape[0], len(df.index))
     ok_(array_equal(res.columns, ['event_status', 'time']))
     eq_(np.sum(res['event_status']), np.sum(df['event_value']))
+
+def test_surv_df_with_bool():
+    ''' test surv_df2: that surv stateful transform works with boolean event types
+    '''
+    test_surv_df(get_alt_test_data())
 
 def test_surv_df_subject():
     ''' test that surv stateful transform includes subject id when given
@@ -88,8 +104,7 @@ def test_surv_df_subject():
     check_valid_id(res['timepoint_id'], ref=df['time'])
     eq_(np.sum(res['event_status']), np.sum(df['event_value']))
 
-def test_surv_df_formula():
-    df = get_test_data()
+def test_surv_df_formula(df=get_test_data()):
     y, X = patsy.dmatrices('surv(time=time, event_status=event_value) ~ X1',
                            data=df)
     res = pd.DataFrame(y)
@@ -98,8 +113,10 @@ def test_surv_df_formula():
     eq_(np.sum(res[0]), np.sum(df['event_value']))
     eq_(np.sum(res[1]), np.sum(df['time']))
 
-def test_surv_df_subject_formula():
-    df = get_test_data()
+def test_surv_df_formula_with_bool():
+    test_surv_df_formula(get_alt_test_data())
+
+def test_surv_df_subject_formula(df=get_test_data()):
     formula = 'surv(time=time, event_status=event_value, subject=subject_id) ~ X1'
     y, X = patsy.dmatrices(formula, data=df)
     res = pd.DataFrame(y)
@@ -115,6 +132,9 @@ def test_surv_df_subject_formula():
     res2 = pd.DataFrame(y.new)
     resm = pd.merge(res, res2, on=[1,2], how='inner')
     ok_(array_equal(resm['0_x'], resm['0_y']))
+
+def test_surv_df_subject_formula_with_bool():
+    test_surv_df_subject_formula(get_alt_test_data())
 
 def test_SurvivalFactor_formula():
     # basic SurvivalFactor class
@@ -133,8 +153,10 @@ def test_SurvivalFactor_formula():
 def _test_keys_include(obj, incl):
     ok_([key in obj.keys() for key in incl])
 
-def test_SurvivalModelDesc_wide():
-    df = get_test_data()
+def test_SurvivalModelDesc_wide_with_bool():
+    test_SurvivalModelDesc_wide(get_alt_test_data())
+
+def test_SurvivalModelDesc_wide(df=get_test_data()):
     formula = 'surv(time=time, event_status=event_value) ~ X1'
     my_formula = SurvivalModelDesc(formula)
     y, X = patsy.dmatrices(my_formula, data=df)
@@ -155,8 +177,11 @@ def test_SurvivalModelDesc_wide():
     _test_keys_include(obj=y.design_info.terms[0].factors[0]._meta_data,
                        incl=['df'])
 
-def test_SurvivalModelDesc_long():
-    df = get_test_data()
+
+def test_SurvivalModelDesc_long_with_bool():
+    test_SurvivalModelDesc_long(get_alt_test_data())
+
+def test_SurvivalModelDesc_long(df=get_test_data()):
     formula = 'surv(time=time, event_status=event_value, subject=subject_id) ~ X1'
     my_formula = SurvivalModelDesc(formula)
     y, X = patsy.dmatrices(my_formula, data=df)
