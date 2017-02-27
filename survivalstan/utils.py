@@ -319,6 +319,7 @@ def _get_sample_ids_single_model(model, sample_col=None, sample_id_col=None):
             raise ValueError('sample_id_col was not given and is also not provided to the model. This is a required input')
     patient_sample_ids = model['df'].loc[:,[sample_col, sample_id_col]].drop_duplicates().sort_values(sample_id_col)
     patient_sample_ids['model_cohort'] = model['model_cohort']
+    patient_sample_ids.dropna(inplace=True)
     return patient_sample_ids
 
 def get_sample_ids(models, sample_col='patient_id'):
