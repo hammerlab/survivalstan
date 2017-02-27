@@ -335,22 +335,26 @@ class SurvivalStanData:
             if decode in mdata.keys():
                 decode_df = mdata[decode]
                 decode_id_col = decode
+                decode_id_rename = '_{}'.format(decode_id_col)
                 decode_col = decode_objects[decode]
-                decode_df.rename(columns={'id': decode_id_col,
+                decode_df.rename(columns={'id': decode_id_rename,
                                           'value': decode_col},
                                 inplace=True)
+                self.df_nonmiss.rename(columns={decode_id_col:
+                                                decode_id_rename},
+                                       inplace=True)
                 self.df_nonmiss = pd.merge(self.df_nonmiss, decode_df,
-                                           on=decode_id_col, how='left')
+                                           on=decode_id_rename, how='left')
                 if decode == 'subject_id':
-                    self.sample_id_col = decode_id_col
-                    self.sample_col = decode_col
+                    self.sample_id_col = decode_id_rename
+                    self.sample_col = decode_col # not necessary, may be safer
                 if decode == 'group_id':
-                    self.group_id_col = decode_id_col
-                    self.group_col = decode_col
+                    self.group_id_col = decode_id_rename
+                    self.group_col = decode_col # also not necessary
                     self._prep_grp_names()
                 if decode == 'timepoint_id':
-                    self.timepoint_id_col = decode_id_col
-                    self.timepoint_end_col = decode_col
+                    self.timepoint_id_col = decode_id_rename
+                    self.timepoint_end_col = decode_col # also not necessary
                     self._prep_timepoint_df()
     
     def prep_stan_data(self, **kwargs):
