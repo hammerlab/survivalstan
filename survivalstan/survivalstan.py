@@ -297,7 +297,16 @@ class SurvivalStanData:
             formula_like=SurvivalModelDesc(self.surv_formula),
             data=self.df,
             )
-        ## TODO update object columns with names of elements (e.g. group_col)
+        surv_factor = self.y.design_info.terms[0].factors[0]
+        if surv_factor._is_survival:
+            args = surv_factor.code_args
+            if 'subject' in args.keys():
+                self.sample_col = args['subject']
+            if 'group' in args.keys():
+                self.group_col = args['group']
+            if surv_factor._type == 'long':
+                if 'time' in args.keys():
+                    self.timepoint_end_col = args['time']
 
     def prep_df_nonmiss(self):
         ''' Create x_df and df_nonmiss
@@ -317,9 +326,9 @@ class SurvivalStanData:
         ''' add ID decodes to df_nonmiss
         '''
         # name object decode for user-provided subject, group & timepoint cols
-        decode_objects = {'subject_id': 'subject',
-                          'group_id': 'group',
-                          'timepoint_id': 'end_time',
+        decode_objects = {'subject_id': self.sample_col,
+                          'group_id': self.group_col,
+                          'timepoint_id': self.timepoint_end_col,
                          }
         mdata = self.y.design_info.terms[0].factors[0]._meta_data
         for decode in decode_objects.keys():
