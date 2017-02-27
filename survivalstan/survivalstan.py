@@ -331,7 +331,7 @@ class SurvivalStanData:
                                           'value': decode_col},
                                 inplace=True)
                 self.df_nonmiss = pd.merge(self.df_nonmiss, decode_df,
-                                           on=decode_id_col, how='outer')
+                                           on=decode_id_col, how='left')
                 if decode == 'subject_id':
                     self.sample_id_col = decode_id_col
                     self.sample_col = decode_col
