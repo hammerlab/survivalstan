@@ -246,11 +246,11 @@ class SurvivalFactor(patsy.EvalFactor):
     _is_survival = True
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(SurvivalFactor, self).__init__(*args, **kwargs)
         self._class = None
 
     def eval(self, *args, **kwargs):
-        result = super().eval(*args, **kwargs)
+        result = super(SurvivalFactor, self).eval(*args, **kwargs)
         try:
             self._class = result.__class__
         except:
