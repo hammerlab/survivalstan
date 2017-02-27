@@ -164,6 +164,7 @@ def fit_stan_survival_model(df=None,
                                            model_cohort=model_cohort
                                           )
         except:
+            logger.warning('Error extracting grp_coefs from model fit')
             grp_coefs = None
     else:
         grp_coefs = beta_coefs
@@ -319,7 +320,13 @@ class SurvivalStanData:
         # prep dataframe containing LHS vars (y_df)
         self.y_df = self.y.design_info.terms[0].factors[0]._meta_data['df']
         # prep df_nonmiss containing both
+        if self.y_df.shape[0] != self.x_df.shape[0]:
+            raise ValueError('x and y dataframes have different lengths.')
+        self.x_df.reset_index(drop=True, inplace=True)
+        self.y_df.reset_index(drop=True, inplace=True)
         self.df_nonmiss = pd.concat([self.y_df, self.x_df], axis=1)
+        if self.df_nonmiss.dropna().shape != self.df_nonmiss.shape:
+            raise ValueError('Missing data in df_nonmiss')
         self._update_df_with_ids()
 
     def _update_df_with_ids(self):
@@ -334,6 +341,9 @@ class SurvivalStanData:
         for decode in decode_objects.keys():
             if decode in mdata.keys():
                 decode_df = mdata[decode]
+                if decode_df.dropna().shape != decode_df.shape:
+                    logger.warning('NA values in decode of {}'.format(decode))
+                decode_df.dropna(inplace=True)
                 decode_id_col = decode
                 decode_id_rename = '_{}'.format(decode_id_col)
                 decode_col = decode_objects[decode]
@@ -380,7 +390,7 @@ class SurvivalStanData:
     def get_group_names(self):
         if not self.group_id_col:
             return(None)
-        return(self.grp_names)
+        return(list(self.grp_names))
     
     def _prep_timepoint_df(self):
         ''' Add timepoint-id-related data to self.timepoint_df
