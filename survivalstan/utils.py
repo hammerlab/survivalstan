@@ -321,11 +321,9 @@ def _get_sample_ids_single_model(model, sample_col=None, sample_id_col=None):
     patient_sample_ids['model_cohort'] = model['model_cohort']
     return patient_sample_ids
 
-
 def get_sample_ids(models, sample_col='patient_id'):
     data = [_get_sample_ids_single_model(model=model, sample_col=sample_col) for model in models]
     return pd.concat(data)
-
 
 def _prep_pp_data_single_model(model, time_element='y_hat_time', event_element='y_hat_event',
                                sample_col=None, time_col='event_time', event_col='event_status',
