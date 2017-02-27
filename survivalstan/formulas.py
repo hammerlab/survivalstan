@@ -156,7 +156,6 @@ class Surv(object):
             if group_id is not None:
                 dm.update({'group_id': group_id})
             dm = pd.DataFrame(dm)
-            dm.index = event_status.index
             # prep stan_data inputs
             stan_data.update({
                     'event': dm['event_status'].values.astype(int),
@@ -194,7 +193,6 @@ class Surv(object):
             if group_id is not None:
                 dm.update({'group_id': group_id})
             dm = pd.DataFrame(dm)
-            dm.index = time.index
             # prep stan_data object
             stan_data.update({'y': dm['time'].values.astype(float),
                               'event': dm['event_status'].values.astype(int),
