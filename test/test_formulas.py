@@ -150,8 +150,13 @@ def test_SurvivalFactor_formula():
     eq_(y.design_info.terms[0].factors[0]._class, SurvData)
     eq_(y.design_info.terms[0].factors[0]._type, 'wide')
 
-def _test_keys_include(obj, incl):
-    ok_([key in obj.keys() for key in incl])
+def _dict_keys_include(dict_obj, incl):
+    ''' Assert that all keys in `incl` exist in dict_obj.keys()
+    '''
+    not_incl = [key for key in incl if key not in dict_obj.keys()]
+    if len(not_incl)>0:
+        print('Keys not found in obj: {}'.format(str(not_incl)))
+    ok_(len(not_incl)==0)
 
 def test_SurvivalModelDesc_wide_with_bool():
     test_SurvivalModelDesc_wide(get_alt_test_data())
@@ -172,9 +177,9 @@ def test_SurvivalModelDesc_wide(df=get_test_data()):
     eq_(y.design_info.terms[0].factors[0]._class, SurvData)
     eq_(y.design_info.terms[0].factors[0]._type, 'wide')
     # stan_data & meta-data should be empty
-    _test_keys_include(obj=y.design_info.terms[0].factors[0]._stan_data,
-                       incl=['event', 'y'])
-    _test_keys_include(obj=y.design_info.terms[0].factors[0]._meta_data,
+    _dict_keys_include(y.design_info.terms[0].factors[0]._stan_data,
+                       incl=['event', 'y', 'N'])
+    _dict_keys_include(y.design_info.terms[0].factors[0]._meta_data,
                        incl=['df'])
 
 
@@ -193,10 +198,11 @@ def test_SurvivalModelDesc_long(df=get_test_data()):
     eq_(y.design_info.terms[0].factors[0]._type, 'long')
     # look for stan_data
     stan_data = y.design_info.terms[0].factors[0]._stan_data
-    ok_([key in stan_data.keys() for key in ['t_obs', 't_dur', 'T', 'S']])
+    _dict_keys_include(stan_data,
+                        ['t_obs','t_dur','T','S','N'])
     # look for meta-data
     meta_data = y.design_info.terms[0].factors[0]._meta_data
-    ok_([key in meta_data.keys() for key in ['timepoint_id', 'subject_id']])
+    _dict_keys_include(meta_data, ['timepoint_id', 'subject_id'])
     # can we extract meta-data?
     eq_(meta_data['subject_id'].shape[1], 2)
     # test ability to build design matrices on new data
@@ -219,9 +225,11 @@ def test_SurvivalModelDesc_long_with_group():
     eq_(y.design_info.terms[0].factors[0]._class, LongSurvData)
     eq_(y.design_info.terms[0].factors[0]._type, 'long')
     stan_data = y.design_info.terms[0].factors[0]._stan_data
-    ok_([key in stan_data.keys() for key in ['t_obs', 't_dur', 'T', 'S', 'G']])
+    _dict_keys_include(stan_data,
+                       ['t_obs', 't_dur', 'T', 'S', 'G', 'N'])
     meta_data = y.design_info.terms[0].factors[0]._meta_data
-    ok_([key in meta_data.keys() for key in ['timepoint_id', 'subject_id', 'group_id']])
+    _dict_keys_include(meta_data,
+                       ['timepoint_id', 'subject_id', 'group_id'])
 
 
 
