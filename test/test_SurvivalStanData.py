@@ -39,4 +39,13 @@ def test_basic_SurvivalStanData_with_sample(df=get_test_data()):
                                         stan_data_keys=['event','t','t_obs','t_dur','T','S','s','M','N','x'],
                                         sample_col='subject_id')
 
+def test_basic_SurvivalStanData_with_sample_and_group(df=get_test_data()):
+    ## note - also tests for safety against redundant id names
+    ssdata = test_basic_SurvivalStanData(df=df,
+                                        stan_data_keys=['event','t','t_obs','t_dur','T','S','s','M','N','x','G','g'],
+                                        sample_col='subject_id',
+                                        group_col='sex')
+    grp_ids = ssdata.get_group_names()
+    eq_(len(grp_ids), 2)
+
 
