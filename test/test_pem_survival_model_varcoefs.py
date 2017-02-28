@@ -53,7 +53,6 @@ def test_pem_model_using_form():
         seed = 9001,
         make_inits = make_inits,
         FIT_FUN = stancache.cached_stan_fit,
-        **kwargs
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)

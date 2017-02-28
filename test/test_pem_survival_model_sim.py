@@ -12,7 +12,7 @@ from .test_datasets import load_test_dataset_long, sim_test_dataset_long
 model_code = survivalstan.models.pem_survival_model
 make_inits = None
 
-def test_pem_model_sim(**kwargs):
+def test_pem_model_sim():
     ''' Test weibull survival model on simulated dataset
     '''
     dlong = sim_test_dataset_long()
@@ -29,7 +29,6 @@ def test_pem_model_sim(**kwargs):
         seed = 9001,
         make_inits = make_inits,
         FIT_FUN = stancache.cached_stan_fit,
-        **kwargs
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
@@ -40,7 +39,7 @@ def test_pem_model_sim(**kwargs):
     return(testfit)
 
 
-def test_pem_model_sim_with_formula(**kwargs):
+def test_pem_model_sim_with_formula():
     ''' Test pem survival model using `surv` formula syntax
     '''
     dlong = sim_test_dataset_long()
@@ -54,7 +53,6 @@ def test_pem_model_sim_with_formula(**kwargs):
         seed = 9001,
         make_inits = make_inits,
         FIT_FUN = stancache.cached_stan_fit,
-        **kwargs
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
@@ -64,7 +62,7 @@ def test_pem_model_sim_with_formula(**kwargs):
     survivalstan.utils.plot_coefs([testfit], element='baseline')
     return(testfit)
 
-def test_pem_model_sim_covar(**kwargs):
+def test_pem_model_sim_covar():
     ''' Test weibull survival model on simulated dataset
     '''
     dlong = sim_test_dataset_long()
@@ -81,7 +79,6 @@ def test_pem_model_sim_covar(**kwargs):
         seed = 9001,
         make_inits = make_inits,
         FIT_FUN = stancache.cached_stan_fit,
-        **kwargs
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
@@ -103,7 +100,6 @@ def test_pem_model_sim_covar_with_form():
         seed = 9001,
         make_inits = make_inits,
         FIT_FUN = stancache.cached_stan_fit,
-        **kwargs
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
