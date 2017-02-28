@@ -40,6 +40,30 @@ def test_pem_model_sim(**kwargs):
     return(testfit)
 
 
+def test_pem_model_sim_with_formula(**kwargs):
+    ''' Test pem survival model using `surv` formula syntax
+    '''
+    dlong = sim_test_dataset_long()
+    testfit = survivalstan.fit_stan_survival_model(
+        model_cohort = 'test model',
+        model_code = model_code,
+        df = dlong,
+        formula = 'surv(event_status=end_failure, time=end_time, subject=index) ~ 1',
+        iter = num_iter,
+        chains = 2,
+        seed = 9001,
+        make_inits = make_inits,
+        FIT_FUN = stancache.cached_stan_fit,
+        **kwargs
+        )
+    ok_('fit' in testfit)
+    ok_('coefs' in testfit)
+    ok_('loo' in testfit)
+    survivalstan.utils.plot_coefs([testfit])
+    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
+    survivalstan.utils.plot_coefs([testfit], element='baseline')
+    return(testfit)
+
 def test_pem_model_sim_covar(**kwargs):
     ''' Test weibull survival model on simulated dataset
     '''
@@ -67,3 +91,24 @@ def test_pem_model_sim_covar(**kwargs):
     survivalstan.utils.plot_coefs([testfit], element='baseline')
     return(testfit)
 
+def test_pem_model_sim_covar_with_form():
+    dlong = sim_test_dataset_long()
+    testfit = survivalstan.fit_stan_survival_model(
+        model_cohort = 'test model',
+        model_code = model_code,
+        df = dlong,
+        formula = 'surv(event_status=end_failure, time=end_time, subject=index) ~ age + sex',
+        iter = num_iter,
+        chains = 2,
+        seed = 9001,
+        make_inits = make_inits,
+        FIT_FUN = stancache.cached_stan_fit,
+        **kwargs
+        )
+    ok_('fit' in testfit)
+    ok_('coefs' in testfit)
+    ok_('loo' in testfit)
+    survivalstan.utils.plot_coefs([testfit])
+    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
+    survivalstan.utils.plot_coefs([testfit], element='baseline')
+    return(testfit)

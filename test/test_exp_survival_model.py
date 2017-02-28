@@ -36,6 +36,29 @@ def test_model():
     survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit)	
 
+def test_model_with_formula():
+    ''' Test survival model using `surv` syntax
+    '''
+    d = load_test_dataset()
+    testfit = survivalstan.fit_stan_survival_model(
+        model_cohort = 'test model',
+        model_code = model_code,
+        df = d,
+        formula = 'surv(event_status=event, time=t) ~ age + sex',
+        iter = num_iter,
+        chains = 2,
+        seed = 9001,
+        make_inits = make_inits,
+        FIT_FUN = stancache.cached_stan_fit,
+        )
+    ok_('fit' in testfit)
+    ok_('coefs' in testfit)
+    ok_('loo' in testfit)
+    survivalstan.utils.plot_coefs([testfit])
+    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
+    return(testfit)
+
+
 def test_null_model(**kwargs):
     ''' Test NULL survival model on flchain dataset
     '''
