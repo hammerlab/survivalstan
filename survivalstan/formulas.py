@@ -329,4 +329,86 @@ class SurvivalModelDesc(object):
     def __patsy_get_model_desc__(self, eval_env):
         return patsy.ModelDesc(self.lhs_termlist, self.rhs_termlist)
 
+def formula_has_lhs(formula):
+    '''return True if formula has LHS. False otherwise
+    '''
+    surv_model = SurvivalModelDesc(formula)
+    return surv_model.lhs.strip() != ''
+
+def formula_uses_surv(formula, df):
+    ''' return True if formula uses `surv` syntax & can be successfully parsed
+    '''
+    if formula_has_lhs(formula):
+        surv_model = SurvivalModelDesc(formula)
+        (y, X) = patsy.dmatrices(surv_model, df)
+        return surv_model.lhs_termlist[0].factors[0]._is_survival
+    else:
+        return False
+
+def gen_lhs_formula(event_col, time_col=None, group_col=None,
+                   sample_col=None, timepoint_end_col=None):
+    ''' Construct LHS of formula_like str using `surv` syntax  
+
+        Parameters:
+            event_col (str): 
+                name of column containing event status (0:censor/1:observed) or (F/T)
+            time_col (str): 
+                name of column containing time to event
+            group_col (str): 
+                (optional) name of column containing group identifiers, if applicable
+            sample_col (str):
+                (optional) name of column containing sample or subject identifiers, if applicable
+            timepoint_end_col (str):
+                (optional) name of column containing timepoint end value, if applicable
+
+        Returns:
+            lhs_formula_like (str) in surv(param=value, param2=value2, ...) syntax
+
+        Comments:
+            Is used by SurvivalStanData class to provide backwards compatibility with surv syntax
+    '''
+    pars = {'event_status': event_col}
+    if time_col:
+        pars.update({'time': time_col})
+    # group column
+    if group_col:
+        pars.update({'group': group_col})
+    # subject column
+    if sample_col:
+        pars.update({'subject': sample_col})
+    # timepoint end col
+    if timepoint_end_col:
+        pars.update({'time': timepoint_end_col})
+    lhs_formula = 'surv({})'.format(','.join(['{}={}'.format(name, value) for name,
+                                    value in pars.items()]))
+    return(lhs_formula)
+
+def gen_surv_formula(rhs_formula, event_col, time_col=None,
+                      group_col=None, sample_col=None, timepoint_end_col=None):
+    ''' Construct formula_like str using `surv` syntax  
+
+        Parameters:
+            rhs_formula (str):
+                formula_like (str) for RHS of model spec
+            event_col (str): 
+                name of column containing event status (0:censor/1:observed) or (F/T)
+            time_col (str): 
+                name of column containing time to event
+            group_col (str): 
+                (optional) name of column containing group identifiers, if applicable
+            sample_col (str):
+                (optional) name of column containing sample or subject identifiers, if applicable
+            timepoint_end_col (str):
+                (optional) name of column containing timepoint end value, if applicable
+
+        Returns:
+            formula_like (str) in `surv(param=value, param2=value2, ...) ~ .` syntax
+
+        Comments:
+            Is used by SurvivalStanData class to provide backwards compatibility with surv syntax
+    '''
+    lhs_formula = gen_lhs_formula(event_col=event_col, time_col=time_col,
+                                  group_col=group_col, sample_col=sample_col,
+                                  timepoint_end_col=timepoint_end_col)
+    return('~'.join([lhs_formula.strip(), rhs_formula.strip()]))
 

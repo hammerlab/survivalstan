@@ -4,7 +4,10 @@ import stanity
 import pandas as pd
 import numpy as np
 import logging
-from .formulas import *
+# n.b. necessary to import all b/c of how patsy formulas work
+# see: 
+from .formulas import surv
+from . import formulas 
 
 logger = logging.getLogger(__name__)
 
@@ -202,48 +205,6 @@ def fit_stan_survival_model(df=None,
         'timepoint_end_col': input_data.timepoint_end_col,
     }
 
-
-def _formula_has_lhs(formula):
-    '''return True if formula has LHS. False otherwise
-    '''
-    surv_model = SurvivalModelDesc(formula)
-    return surv_model.lhs.strip() != ''
-
-def _formula_uses_surv(formula, df):
-    ''' return True if formula uses `surv` syntax
-    '''
-    if _formula_has_lhs(formula):
-        surv_model = SurvivalModelDesc(formula)
-        (y, X) = patsy.dmatrices(surv_model, df)
-        return surv_model.lhs_termlist[0].factors[0]._is_survival
-    else:
-        return False
-
-def _gen_lhs_formula(event_col, time_col=None, group_col=None,
-                      sample_col=None, timepoint_end_col=None):
-    pars = {'event_status': event_col}
-    if time_col:
-        pars.update({'time': time_col})
-    # group column
-    if group_col:
-        pars.update({'group': group_col})
-    # subject column
-    if sample_col:
-        pars.update({'subject': sample_col})
-    # timepoint end col
-    if timepoint_end_col:
-        pars.update({'time': timepoint_end_col})
-    lhs_formula = 'surv({})'.format(','.join(['{}={}'.format(name, value) for name,
-                                    value in pars.items()]))
-    return(lhs_formula)
-
-def _gen_surv_formula(rhs_formula, event_col, time_col=None,
-                      group_col=None, sample_col=None, timepoint_end_col=None):
-    lhs_formula = _gen_lhs_formula(event_col=event_col, time_col=time_col,
-                                   group_col=group_col, sample_col=sample_col,
-                                   timepoint_end_col=timepoint_end_col)
-    return('~'.join([lhs_formula.strip(), rhs_formula.strip()]))
-
 class SurvivalStanData:
     'Input data representing a survival model in survivalstan'
 
@@ -277,14 +238,14 @@ class SurvivalStanData:
         ''' Process inputs & convert to new survival-formula syntax
         '''
         # does given formula have a LHS component & use surv syntax?
-        if _formula_uses_surv(self.formula, self.df):
+        if formulas.formula_uses_surv(self.formula, self.df):
             self.surv_formula = self.formula
-        elif _formula_has_lhs(self.formula):
+        elif formulas.formula_has_lhs(self.formula):
             raise ValueError('Given formula has LHS component not using `surv`',
                              'syntax. Please see ?survivalstan.formulas.surv')
         else:
-            rhs_formula = SurvivalModelDesc(self.formula).rhs
-            self.surv_formula = _gen_surv_formula(rhs_formula=rhs_formula,
+            rhs_formula = formulas.SurvivalModelDesc(self.formula).rhs
+            self.surv_formula = formulas.gen_surv_formula(rhs_formula=rhs_formula,
                                                  event_col=self.event_col,
                                                  group_col=self.group_col,
                                                  sample_col=self.sample_col,
@@ -295,7 +256,7 @@ class SurvivalStanData:
         ''' Prepare x and y design matrices
         '''
         (self.y, self.x) = patsy.dmatrices(
-            formula_like=SurvivalModelDesc(self.surv_formula),
+            formula_like=formulas.SurvivalModelDesc(self.surv_formula),
             data=self.df,
             )
         surv_factor = self.y.design_info.terms[0].factors[0]
