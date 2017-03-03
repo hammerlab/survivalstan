@@ -71,23 +71,35 @@ as_id = patsy.stateful_transform(Id)
 
 class SurvData(pd.DataFrame):
     ''' patsy.DesignMatrix representing survival data output '''
+    survival_type = 'UNK'
+
+    def __init__(self, *args, **kwargs):
+        if 'stan_data' in kwargs.keys():
+            stan_data = kwargs['stan_data']
+            del kwargs['stan_data']
+        else:
+            stan_data = dict()
+        if 'meta_data' in kwargs.keys():
+            meta_data = kwargs['meta_data']
+            del kwargs['meta_data']
+        else:
+            meta_data = dict()
+        super(SurvData, self).__init__(*args, **kwargs)
+        self.stan_data = stan_data
+        self.meta_data = meta_data
+
+class WideSurvData(SurvData):
+    ''' pd.DataFrame representing survival data with one record per subject '''
     survival_type = 'wide'
 
     def __init__(self, *args, **kwargs):
-        my_kwargs = dict(**kwargs)
-        if 'stan_data' in my_kwargs.keys():
-            stan_data = my_kwargs['stan_data']
-            del my_kwargs['stan_data']
-        else:
-            stan_data = dict()
-        if 'meta_data' in my_kwargs.keys():
-            meta_data = my_kwargs['meta_data']
-            del my_kwargs['meta_data']
-        else:
-            meta_data = dict()
-        super(SurvData, self).__init__(*args, **my_kwargs)
-        self.stan_data = stan_data
-        self.meta_data = meta_data
+        super(WideSurvData, self).__init__(*args, **kwargs)
+        self._validate_wide_data()
+
+    def _validate_wide_data(self):
+        ## TODO confirm wide format
+        ## validate contents of stan_data
+        return True
 
 class LongSurvData(SurvData):
     ''' pd.DataFrame representing survival data with endpoint_time_id, event_status & subject_id '''
@@ -212,7 +224,7 @@ class Surv(object):
             stan_data.update({'y': time, 'event': event_status.astype(int), 'N': len(time)})
             if group_id is not None:
                 stan_data.update({'g': group_id})
-        return SurvData(dm, stan_data=stan_data, meta_data=meta_data, **kwargs)
+        return WideSurvData(dm, stan_data=stan_data, meta_data=meta_data, **kwargs)
 
     def transform(self, time, event_status, **kwargs):
         kwargs = self._check_kwargs(**kwargs)
@@ -245,15 +257,20 @@ surv = patsy.stateful_transform(Surv)
 
 def _get_args(s):
     ''' Given a string of named code, return dict of named arguments
+
+    Parameters:
+        s (string): string in format of function_name(arg1=val1, arg2=val2, ...)
+    
+    Returns:
+        (if string in format above) dict containing named parameter values: {'arg1': 'val1', 'arg2': 'val2'}
+        note: function_name & unnamed args are ignored
     '''
     pattern = r'(\w[\w\d_]*)\((.*)\)$'
     match = re.match(pattern, s)
     if match and len(match.groups())==2:
         return dict(re.findall(r'(\S+)=(".*?"|[^ ,]+)', match.groups()[1]))
-    elif match is not None:
-        return list(match.groups())
     else:
-        return []
+        raise ValueError('function string {} could not be parsed'.format(s))
 
 class SurvivalFactor(patsy.EvalFactor):
     ''' A factor object to encode LHS variables
