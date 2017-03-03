@@ -4,8 +4,11 @@ import stanity
 import pandas as pd
 import numpy as np
 import logging
-# n.b. necessary to import all b/c of how patsy formulas work
-# see: 
+# n.b. necessary to import surv directly b/c of how patsy formulas work
+# see: http://patsy.readthedocs.io/en/latest/stateful-transforms.html 
+# which reads 
+#         Currently the rule is that you must access the stateful transform 
+#         function using a simple, bare variable reference, without any dots or other lookups
 from .formulas import surv
 from . import formulas 
 
