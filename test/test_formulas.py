@@ -147,7 +147,7 @@ def test_SurvivalFactor_formula():
     eq_(y.shape[1], 2)
     eq_(y.shape[0], len(df.index))
     ok_(y.design_info.terms[0].factors[0]._is_survival) ## should be True
-    eq_(y.design_info.terms[0].factors[0]._class, SurvData)
+    ok_(issubclass(y.design_info.terms[0].factors[0]._class, SurvData))
     eq_(y.design_info.terms[0].factors[0]._type, 'wide')
 
 def _dict_keys_include(dict_obj, incl):
@@ -174,14 +174,13 @@ def test_SurvivalModelDesc_wide(df=get_test_data()):
     eq_(len(y.design_info.terms[0].factors), 1)
     # LHS should be of type 'survival' (wide)
     ok_(y.design_info.terms[0].factors[0]._is_survival == True)
-    eq_(y.design_info.terms[0].factors[0]._class, SurvData)
+    ok_(issubclass(y.design_info.terms[0].factors[0]._class, SurvData))
     eq_(y.design_info.terms[0].factors[0]._type, 'wide')
     # stan_data & meta-data should be empty
     _dict_keys_include(y.design_info.terms[0].factors[0]._stan_data,
                        incl=['event', 'y', 'N'])
     _dict_keys_include(y.design_info.terms[0].factors[0]._meta_data,
                        incl=['df'])
-
 
 def test_SurvivalModelDesc_long_with_bool():
     test_SurvivalModelDesc_long(get_alt_test_data())
