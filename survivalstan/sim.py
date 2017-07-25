@@ -1,7 +1,7 @@
 
 """
 
-   Functions to simulate failure-time data 
+   Functions to simulate failure-time data
    for testing & model checking purposes
 
 """
@@ -19,7 +19,7 @@ def sim_data_exp(N, censor_time, rate):
       Parameters
       -----------
 
-        N: (int) number of observations 
+        N: (int) number of observations
         censor_time: (float) uniform censor time for each observation
         rate: (float, positive) hazard rate used to parameterize failure times
 
@@ -33,7 +33,7 @@ def sim_data_exp(N, censor_time, rate):
               or censored (FALSE)
     """
     sample_data = pd.DataFrame({
-            'true_t': np.random.exponential((1/rate), size=N) 
+            'true_t': np.random.exponential((1/rate), size=N)
             })
     ## censor observations at censor_time
     sample_data['t'] = np.minimum(sample_data['true_t'], censor_time)
@@ -56,7 +56,7 @@ def sim_data_exp_correlated(N, censor_time, rate_form = '1 + age + sex', rate_co
       Parameters
       -----------
 
-        N: (int) number of observations 
+        N: (int) number of observations
         censor_time: (float) uniform censor time for each observation
         rate_form: names of variables to use when estimating rate. defaults to `'1 + age + sex'`
         rate_coefs: inputs to rate-calc (coefs used to estimate log-rate). defaults to `[-3, 0.3, 0]`
@@ -87,6 +87,48 @@ def sim_data_exp_correlated(N, censor_time, rate_form = '1 + age + sex', rate_co
     sample_data['index'] = np.arange(N)
     return(sample_data)
 
+## -- simulate data for complex hazards
+
+def _sim_mixture_weibull_S(t,
+                         gamma1,
+                         gamma2,
+                         lambda1,
+                         lambda2,
+                         p):
+    '''
+    Simulate data for complex hazards, as mixture of weibull distributions.
+
+    Returns Survival at time t, given parameter values
+
+    Based on:
+    ## The use of restricted cubic splines to approximate complex hazard functions in the analysis of time-to-event data: a simulation study
+    ## Mark J. Rutherford, Michael J. Crowther & Paul C. Lambert Journal of Statistical Computation and Simulation Vol. 85 , Iss. 4, 2015
+
+    '''
+    S = p * np.exp(pow(t, gamma1) * -1 * lambda1) + (1 - p) * np.exp(pow(t, gamma2) * -1 * lambda2)
+    return S
+
+def _sim_mixture_weibull_h(t,
+                           gamma1,
+                           gamma2,
+                           lambda1,
+                           lambda2,
+                           p,
+                           X=None,
+                           beta=None):
+    h = ((lambda1 * gamma1 * pow(t, gamma1-1) * p * np.exp(-1 * lambda1 * pow(t, gamma1)) + lambda2 * gamma2 * pow(t, gamma2-1) * (1 - p)* np.exp(-1 * lambda2 * pow(t, gamma2)))
+         / (p * np.exp(-1 * lambda1 * pow(t, gamma1)) + (1 - p) * np.exp(-1 * lambda2 * pow(t, gamma2)) ))
+    if X and beta:
+        ## proportional hazards
+        h = h * np.exp(X*beta)
+    return h
+
+def _sim_mixture_weibull_S2(t,
+                           stepsize=0.01,
+                           **kwargs):
+    h = _sim_mixture_weibull_h(t=np.arange(start=stepsize, stop=t, step=stepsize), **kwargs)
+    return np.exp( -1 * sum(h * stepsize))
+
 ## -- simulate data for joint models
 
 def _sim_jointmodel_inputs(N,
@@ -102,7 +144,7 @@ def _sim_jointmodel_inputs(N,
     ''' Simulate parameter & covariate values for data-generating process,
         some of which are hard-coded. Hard-coded values can be overwritted by
         passing named kwargs to this function.
-        
+
         Returns a dict of inputs for other sim-data functions in this module.
     '''
     ## construct B_matrix if not provided
@@ -117,7 +159,7 @@ def _sim_jointmodel_inputs(N,
     raneff = np.matrix(np.random.multivariate_normal(mean=(0,0,0), cov=B_matrix, size=N))
     b = raneff[:,0:2]
     vi = raneff[:,2]
-    
+
     ## measurement error for longitudinal data simulation
     def meas_error(n=1):
         return(np.random.normal(loc=0, scale=meas_error_scale, size=n))
@@ -127,7 +169,7 @@ def _sim_jointmodel_inputs(N,
     X_l = X[:,0:1] # covariate X for longitudinal submodel
     X_r = X[:,0:1] # covariate X for recurrent events submodel
     X_t = X[:,1:2] # covariate X for terminal event submodel
-    
+
     params = {
         'X': X,
         'X_l': X_l,
@@ -148,7 +190,7 @@ def _sim_jointmodel_inputs(N,
         'censor': 5.5,
         'meas_gap': 0.2,
         }
-    
+
     if dict(**kwargs):
         params.update(dict(**kwargs))
     return(params)
@@ -157,7 +199,7 @@ def _sim_jointmodel_inputs(N,
 
 def _sim_jointmodel_terminal_events(lambda_t_0, alpha, vi, X_t, B_t, b, eta_t, censor, **kwargs):
     ''' Simulate data for terminating events
-        
+
         Returns a dataframe containing:
             - event_status (1:observed, 0:censor)
             - event_time (time to event)
@@ -173,9 +215,9 @@ def _sim_jointmodel_terminal_events(lambda_t_0, alpha, vi, X_t, B_t, b, eta_t, c
 
 def _sim_jointmodel_recurrent_events(lambda_r_0, vi, X_r, B_r, b, eta_r, N, t_df, max_events=6, **kwargs):
     ''' Simulate data for recurrent events.
-    
+
         Returns a data frame containing one obs for each recurrent event observed.
-        
+
         Columns include:
             - index (subject_id)
             - recurrence_time (calendar time of recurrent event)
@@ -193,9 +235,9 @@ def _sim_jointmodel_recurrent_events(lambda_r_0, vi, X_r, B_r, b, eta_r, N, t_df
 def _sim_jointmodel_longitudinal_biomarker(N, meas_gap, t_df, X_l, b, meas_error, B_l,
                                     left_censor_at=-0.4, max_visits=20, **kwargs):
     ''' Simulate data for longitudinal biomarker correlated with events
-    
+
         Returns a data frame containing one obs for each longitudinal biomarker measure observed.
-        
+
         Columns:
             - index (subject_id)
             - biomarker_time (time of biomarker measurement)
@@ -206,10 +248,10 @@ def _sim_jointmodel_longitudinal_biomarker(N, meas_gap, t_df, X_l, b, meas_error
     l_df.reset_index(inplace=True)
     l_df = pd.melt(l_df, id_vars=['index'], value_name='biomarker_time')
     del l_df['variable']
-    
+
     l_df = pd.merge(l_df, t_df, on='index', how='outer')
     l_df = l_df.query('biomarker_time <= event_time').copy()
-    
+
     def _sim_biomarker_values(row):
         index = int(row['index'])
         time = row['biomarker_time']
@@ -222,7 +264,7 @@ def _sim_jointmodel_longitudinal_biomarker(N, meas_gap, t_df, X_l, b, meas_error
             print('Warning')
         else:
             return(float(value))
-    
+
     l_df['biomarker_value'] = l_df.apply(_sim_biomarker_values, axis=1)
     if left_censor_at:
         l_df['biomarker_value'] = l_df['biomarker_value'].apply(lambda x: x if x >= left_censor_at else left_censor_at)
@@ -230,10 +272,10 @@ def _sim_jointmodel_longitudinal_biomarker(N, meas_gap, t_df, X_l, b, meas_error
 
 
 def _prep_jointmodel_covariate_data(X, **kwargs):
-    ''' Helper function to prepare subject-level covariate values (X) as a dataframe. 
-        
+    ''' Helper function to prepare subject-level covariate values (X) as a dataframe.
+
         Returns a dataframe containing one record per subject.
-        
+
         Columns:
             - index (subject_id)
             - X1 (first simulated covariate)
@@ -244,24 +286,24 @@ def _prep_jointmodel_covariate_data(X, **kwargs):
     return(X_df)
 
 def sim_data_jointmodel(N, p=0.5, **kwargs):
-    ''' Simulate data for joint model 
-    
+    ''' Simulate data for joint model
+
         Returns
         ---------
         Dictionary of 4 ojects:
-        
+
         - params: parameter values used to simulate data
         - covars: dataframe of covariates per subject_id
         - events: dataframe of multiple-event data, per subject_id
         - biomarker: dataframe of longitudinal biomarker values simulated
-        
+
     '''
     params = _sim_jointmodel_inputs(N=N, p=p, **kwargs)
     x_df = _prep_jointmodel_covariate_data(**params)
     t_df = _sim_jointmodel_terminal_events(**params)
     r_df = _sim_jointmodel_recurrent_events(t_df=t_df, **params)
     l_df = _sim_jointmodel_longitudinal_biomarker(t_df=t_df, **params)
-   
+
     ## prepare data in survivalstan format
     t_df.rename(columns={'event_status': 'event_value',
                      'event_time': 'time',
@@ -279,7 +321,3 @@ def sim_data_jointmodel(N, p=0.5, **kwargs):
     l_df.rename(columns={'index': 'subject_id'}, inplace=True)
     events = pd.concat([t_df, r_df])
     return dict(params=params, covars=x_df, events=events, biomarker=l_df)
-
-
-
-
