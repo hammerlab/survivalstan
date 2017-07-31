@@ -87,47 +87,6 @@ def sim_data_exp_correlated(N, censor_time, rate_form = '1 + age + sex', rate_co
     sample_data['index'] = np.arange(N)
     return(sample_data)
 
-## -- simulate data for complex hazards
-
-def _sim_mixture_weibull_S(t,
-                         gamma1,
-                         gamma2,
-                         lambda1,
-                         lambda2,
-                         p):
-    '''
-    Simulate data for complex hazards, as mixture of weibull distributions.
-
-    Returns Survival at time t, given parameter values
-
-    Based on:
-    ## The use of restricted cubic splines to approximate complex hazard functions in the analysis of time-to-event data: a simulation study
-    ## Mark J. Rutherford, Michael J. Crowther & Paul C. Lambert Journal of Statistical Computation and Simulation Vol. 85 , Iss. 4, 2015
-
-    '''
-    S = p * np.exp(pow(t, gamma1) * -1 * lambda1) + (1 - p) * np.exp(pow(t, gamma2) * -1 * lambda2)
-    return S
-
-def _sim_mixture_weibull_h(t,
-                           gamma1,
-                           gamma2,
-                           lambda1,
-                           lambda2,
-                           p,
-                           X=None,
-                           beta=None):
-    h = ((lambda1 * gamma1 * pow(t, gamma1-1) * p * np.exp(-1 * lambda1 * pow(t, gamma1)) + lambda2 * gamma2 * pow(t, gamma2-1) * (1 - p)* np.exp(-1 * lambda2 * pow(t, gamma2)))
-         / (p * np.exp(-1 * lambda1 * pow(t, gamma1)) + (1 - p) * np.exp(-1 * lambda2 * pow(t, gamma2)) ))
-    if X and beta:
-        ## proportional hazards
-        h = h * np.exp(X*beta)
-    return h
-
-def _sim_mixture_weibull_S2(t,
-                           stepsize=0.01,
-                           **kwargs):
-    h = _sim_mixture_weibull_h(t=np.arange(start=stepsize, stop=t, step=stepsize), **kwargs)
-    return np.exp( -1 * sum(h * stepsize))
 
 ## -- simulate data for joint models
 
