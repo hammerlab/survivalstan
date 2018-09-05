@@ -18,6 +18,12 @@ def get_alt_test_data():
     data['event_value'] = data['event_value'] == 1
     return(data)
 
+def test_get_args():
+    ''' test that get_args correctly parses args
+    '''
+    res = _get_args('function_name(arg1=1, arg2="2")')
+    eq_(res, {'arg1': 1, 'arg2': '2'})
+
 def test_as_id_str():
     ''' Test that as_id uniquely enumerates strings
     '''
