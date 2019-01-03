@@ -1,14 +1,14 @@
 import pandas as pd
 import patsy
-import sys
 import numpy as np
 import re
 import logging
 logger = logging.getLogger(__name__)
 
+
 def _prep_timepoint_dataframe(df,
                               timepoint_end_col,
-                              timepoint_id_col = None
+                              timepoint_id_col=None
                               ):
     """ Helper function to take a set of timepoints
         in observation-level dataframe & return
@@ -25,16 +25,22 @@ def _prep_timepoint_dataframe(df,
     time_df.sort_values(timepoint_end_col, inplace=True)
     if not(timepoint_id_col):
         timepoint_id_col = 'timepoint_id'
-        time_df[timepoint_id_col] = time_df[timepoint_end_col].astype('category').cat.codes + 1
-    time_df.dropna(how='any', subset=[timepoint_id_col, timepoint_end_col], inplace=True)
-    time_df = time_df.loc[:,[timepoint_id_col, timepoint_end_col]].drop_duplicates()
+        time_df[timepoint_id_col] = ((time_df[timepoint_end_col]
+                                     .astype('category')
+                                     .cat
+                                     .codes)
+                                     + 1)
+    time_df.dropna(how='any', subset=[timepoint_id_col, timepoint_end_col],
+                   inplace=True)
+    time_df = (time_df.loc[:, [timepoint_id_col, timepoint_end_col]]
+                      .drop_duplicates())
     time_df[timepoint_end_col] = time_df[timepoint_end_col].astype(np.float32)
     time_df.set_index(timepoint_id_col, inplace=True, drop=True)
     time_df.sort_index(inplace=True)
     t_durs = time_df.diff(periods=1)
-    t_durs.rename(columns = {timepoint_end_col: 't_dur'}, inplace=True)
+    t_durs.rename(columns={timepoint_end_col: 't_dur'}, inplace=True)
     time_df = time_df.join(t_durs)
-    if len(time_df.index)>1:
+    if len(time_df.index) > 1:
         time_df.fillna(inplace=True, value=time_df.loc[1, timepoint_end_col])
     return(time_df)
 
@@ -67,7 +73,9 @@ class Id(object):
         df.dropna(inplace=True)
         return df
 
+
 as_id = patsy.stateful_transform(Id)
+
 
 class SurvData(pd.DataFrame):
     ''' patsy.DesignMatrix representing survival data output '''
@@ -88,6 +96,7 @@ class SurvData(pd.DataFrame):
         self.stan_data = stan_data
         self.meta_data = meta_data
 
+
 class WideSurvData(SurvData):
     ''' pd.DataFrame representing survival data with one record per subject '''
     survival_type = 'wide'
@@ -97,16 +106,20 @@ class WideSurvData(SurvData):
         self._validate_wide_data()
 
     def _validate_wide_data(self):
-        ## TODO confirm wide format
-        ## validate contents of stan_data
+        # TODO confirm wide format
+        # validate contents of stan_data
         return True
 
+
 class LongSurvData(SurvData):
-    ''' pd.DataFrame representing survival data with endpoint_time_id, event_status & subject_id '''
+    ''' pd.DataFrame representing survival data
+    with endpoint_time_id, event_status & subject_id '''
     survival_type = 'long'
+
 
 class NotValidId(ValueError):
     ''' Class of errors pertaining to invalid Id variables '''
+
 
 class Surv(object):
     ''' Class representing stateful Survival-type data
@@ -124,7 +137,8 @@ class Surv(object):
         allowed_kwargs = ['subject', 'group']
         bad_keys = [key not in allowed_kwargs for key in kwargs.keys()]
         if any(bad_keys):
-            raise ValueError('Invalid parameter: {}'.format(','.join(bad_keys)))
+            raise ValueError('Invalid parameter: {}'
+                             .format(','.join(bad_keys)))
         return kwargs
 
     def memorize_chunk(self, time, event_status, **kwargs):
@@ -163,24 +177,26 @@ class Surv(object):
         if not patsy.util.have_pandas:
             raise ValueError('non-pandas use case not supported yet. Please ',
                              'import pandas to use `surv`')
-	dm = {'timepoint_id': timepoint_id,
+        dm = {'timepoint_id': timepoint_id,
               'event_status': event_status.astype(int),
               'subject_id': subject_id
               }
-	if group_id is not None:
-	    dm.update({'group_id': group_id})
-	dm = pd.DataFrame(dm)
-	# prep stan_data inputs
-	stan_data.update({
-            'event': dm['event_status'].values.astype(int),
-            't': dm['timepoint_id'].values.astype(int),
-            's': dm['subject_id'].values.astype(int),
-            'N': len(dm.index),
-            })
+        if group_id is not None:
+            dm.update({'group_id': group_id})
+        dm = pd.DataFrame(dm)
+        # prep stan_data inputs
+        stan_data.update({
+                'event': dm['event_status'].values.astype(int),
+                't': dm['timepoint_id'].values.astype(int),
+                's': dm['subject_id'].values.astype(int),
+                'N': len(dm.index),
+                })
         if group_id is not None:
             stan_data.update({'g': dm['group_id'].values.astype(int)})
-	meta_data.update({'df': dm})
-        return LongSurvData(dm, stan_data=stan_data, meta_data=meta_data, **kwargs)
+        meta_data.update({'df': dm})
+        return LongSurvData(dm,
+                            stan_data=stan_data,
+                            meta_data=meta_data, **kwargs)
 
     def _prep_wide(self, time, event_status, group_id=None,
                    stan_data=dict(), meta_data=dict(), **kwargs):
@@ -190,7 +206,7 @@ class Surv(object):
 
         # prep pandas dataframe
         dm = {'time': time,
-               'event_status': event_status.astype(int),
+              'event_status': event_status.astype(int),
               }
         if group_id is not None:
             dm.update({'group_id': group_id})
@@ -202,7 +218,10 @@ class Surv(object):
         if group_id is not None:
             stan_data.update({'g': dm['group_id'].values.astype(int)})
         meta_data.update({'df': dm})
-        return WideSurvData(dm, stan_data=stan_data, meta_data=meta_data, **kwargs)
+        return WideSurvData(dm,
+                            stan_data=stan_data,
+                            meta_data=meta_data,
+                            **kwargs)
 
     def transform(self, time, event_status, **kwargs):
         kwargs = self._check_kwargs(**kwargs)
@@ -213,7 +232,9 @@ class Surv(object):
             timepoint_id = self.timepoint_id.transform(time)
             meta_data.update({'timepoint_id': self.timepoint_id.decode_df(),
                               'subject_id': self.subject_id.decode_df()})
-            stan_data.update(self._prep_timepoint_standata(self.timepoint_id.decode_df()))
+            stan_data.update(self._prep_timepoint_standata(self
+                                                           .timepoint_id
+                                                           .decode_df()))
             stan_data.update({'S': self.subject_id.len()})
         if 'group' in kwargs.keys():
             group_id = self.group_id.transform(kwargs['group'])
@@ -223,32 +244,44 @@ class Surv(object):
             group_id = None
 
         if self._type == 'long':
-            return(self._prep_long(timepoint_id=timepoint_id, event_status=event_status,
-                                  subject_id=subject_id, group_id=group_id,
-                                  meta_data=meta_data, stan_data=stan_data)
-                  )
+            return(self._prep_long(timepoint_id=timepoint_id,
+                                   event_status=event_status,
+                                   subject_id=subject_id,
+                                   group_id=group_id,
+                                   meta_data=meta_data,
+                                   stan_data=stan_data)
+                   )
         elif self._type == 'wide':
-            return(self._prep_wide(time=time, event_status=event_status, group_id=group_id,
-                                  meta_data=meta_data, stan_data=stan_data))
+            return(self._prep_wide(time=time,
+                                   event_status=event_status,
+                                   group_id=group_id,
+                                   meta_data=meta_data,
+                                   stan_data=stan_data))
+
 
 surv = patsy.stateful_transform(Surv)
+
 
 def _get_args(s):
     ''' Given a string of named code, return dict of named arguments
 
     Parameters:
-        s (string): string in format of function_name(arg1=val1, arg2=val2, ...)
-    
+        s (string): string in format of:
+                    function_name(arg1=val1, arg2=val2, ...)
+
     Returns:
-        (if string in format above) dict containing named parameter values: {'arg1': 'val1', 'arg2': 'val2'}
+        if string in format above
+           dict containing named parameter values:
+                 {'arg1': 'val1', 'arg2': 'val2'}
         note: function_name & unnamed args are ignored
     '''
     pattern = r'(\w[\w\d_]*)\((.*)\)$'
     match = re.match(pattern, s)
-    if match and len(match.groups())==2:
+    if match and len(match.groups()) == 2:
         return dict(re.findall(r'(\S+)=(".*?"|[^ ,]+)', match.groups()[1]))
     else:
         raise ValueError('function string {} could not be parsed'.format(s))
+
 
 class SurvivalFactor(patsy.EvalFactor):
     ''' A factor object to encode LHS variables
@@ -274,12 +307,13 @@ class SurvivalFactor(patsy.EvalFactor):
 
         return result
 
+
 class SurvivalModelDesc(object):
     ''' A ModelDesc class to force use of SurvivalFactor when encoding LHS
         variables for a SurvivalModel
 
         Example:
-            
+
             # simple survival model
             my_formula = SurvivalModelDesc('surv(time=time,
                 event_status=event_value) ~ X1')
@@ -297,7 +331,9 @@ class SurvivalModelDesc(object):
     def __init__(self, formula):
         self.formula = formula
         try:
-            self.lhs, self.rhs = re.split(string=formula, pattern='~', maxsplit=1)
+            self.lhs, self.rhs = re.split(string=formula,
+                                          pattern='~',
+                                          maxsplit=1)
         except ValueError:
             self.rhs = formula
             self.lhs = ''
@@ -307,11 +343,13 @@ class SurvivalModelDesc(object):
     def __patsy_get_model_desc__(self, eval_env):
         return patsy.ModelDesc(self.lhs_termlist, self.rhs_termlist)
 
+
 def formula_has_lhs(formula):
     '''return True if formula has LHS. False otherwise
     '''
     surv_model = SurvivalModelDesc(formula)
     return surv_model.lhs.strip() != ''
+
 
 def formula_uses_surv(formula, df):
     ''' return True if formula uses `surv` syntax & can be successfully parsed
@@ -323,27 +361,34 @@ def formula_uses_surv(formula, df):
     else:
         return False
 
+
 def gen_lhs_formula(event_col, time_col=None, group_col=None,
-                   sample_col=None, timepoint_end_col=None):
-    ''' Construct LHS of formula_like str using `surv` syntax  
+                    sample_col=None, timepoint_end_col=None):
+    ''' Construct LHS of formula_like str using `surv` syntax
 
         Parameters:
-            event_col (str): 
-                name of column containing event status (0:censor/1:observed) or (F/T)
-            time_col (str): 
+            event_col (str):
+                name of column containing event status
+                  (0:censor/1:observed) or (F/T)
+            time_col (str):
                 name of column containing time to event
-            group_col (str): 
-                (optional) name of column containing group identifiers, if applicable
+            group_col (str):
+                (optional) name of column containing group identifiers,
+                   if applicable
             sample_col (str):
-                (optional) name of column containing sample or subject identifiers, if applicable
+                (optional) name of column containing sample or subject
+                  identifiers, if applicable
             timepoint_end_col (str):
-                (optional) name of column containing timepoint end value, if applicable
+                (optional) name of column containing timepoint end value,
+                   if applicable
 
         Returns:
-            lhs_formula_like (str) in surv(param=value, param2=value2, ...) syntax
+            lhs_formula_like (str)
+              in surv(param=value, param2=value2, ...) syntax
 
         Comments:
-            Is used by SurvivalStanData class to provide backwards compatibility with surv syntax
+            Is used by SurvivalStanData class to provide backwards
+              compatibility with surv syntax
     '''
     pars = {'event_status': event_col}
     if time_col:
@@ -357,36 +402,42 @@ def gen_lhs_formula(event_col, time_col=None, group_col=None,
     # timepoint end col
     if timepoint_end_col:
         pars.update({'time': timepoint_end_col})
-    lhs_formula = 'surv({})'.format(','.join(['{}={}'.format(name, value) for name,
-                                    value in pars.items()]))
+    lhs_formula = 'surv({})'.format(','.join(['{}={}'.format(name, value)
+                                    for name, value in pars.items()]))
     return(lhs_formula)
 
+
 def gen_surv_formula(rhs_formula, event_col, time_col=None,
-                      group_col=None, sample_col=None, timepoint_end_col=None):
-    ''' Construct formula_like str using `surv` syntax  
+                     group_col=None, sample_col=None, timepoint_end_col=None):
+    ''' Construct formula_like str using `surv` syntax
 
         Parameters:
             rhs_formula (str):
                 formula_like (str) for RHS of model spec
-            event_col (str): 
-                name of column containing event status (0:censor/1:observed) or (F/T)
-            time_col (str): 
+            event_col (str):
+                name of column containing
+                  event status (0:censor/1:observed) or (F/T)
+            time_col (str):
                 name of column containing time to event
-            group_col (str): 
-                (optional) name of column containing group identifiers, if applicable
+            group_col (str):
+                (optional) name of column containing group identifiers,
+                  if applicable
             sample_col (str):
-                (optional) name of column containing sample or subject identifiers, if applicable
+                (optional) name of column containing sample or subject
+                  identifiers, if applicable
             timepoint_end_col (str):
-                (optional) name of column containing timepoint end value, if applicable
+                (optional) name of column containing timepoint end value,
+                  if applicable
 
         Returns:
-            formula_like (str) in `surv(param=value, param2=value2, ...) ~ .` syntax
+            formula_like (str) in
+              `surv(param=value, param2=value2, ...) ~ .` syntax
 
         Comments:
-            Is used by SurvivalStanData class to provide backwards compatibility with surv syntax
+            Is used by SurvivalStanData class
+              to provide backwards compatibility with surv syntax
     '''
     lhs_formula = gen_lhs_formula(event_col=event_col, time_col=time_col,
                                   group_col=group_col, sample_col=sample_col,
                                   timepoint_end_col=timepoint_end_col)
     return('~'.join([lhs_formula.strip(), rhs_formula.strip()]))
-
