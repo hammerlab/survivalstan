@@ -12,6 +12,18 @@ import patsy
 
 ## -- generic/simple simulate data functions
 
+def sim_covariate_data(N, censor_time=10, female_prop=0.5, age_moment=55):
+    '''
+    '''
+    sample_data = pd.DataFrame({
+            'censor_time': np.repeat(censor_time, N)
+            })
+    sample_data['sex'] = ['female' if np.random.uniform()>0.5 else 'male' for i in np.arange(N)]
+    sample_data['age'] = np.random.poisson(55, N)
+    sample_data['index'] = np.arange(N)
+    return sample_data
+
+
 def sim_data_exp(N, censor_time, rate):
     """
       simulate true lifetimes (t) according to exponential model
@@ -98,7 +110,7 @@ def _sim_mixture_weibull_S(t,
     '''
     Simulate data for complex hazards, as mixture of weibull distributions.
 
-    Returns Survival at time t, given parameter values
+    Returns Survival at time t, given parameter values. Uses empirical method of determining S (integral of H)
 
     Based on:
     ## The use of restricted cubic splines to approximate complex hazard functions in the analysis of time-to-event data: a simulation study
@@ -115,19 +127,33 @@ def _sim_mixture_weibull_h(t,
                            lambda2,
                            p,
                            X=None,
-                           beta=None):
+                           form=None,
+                           coefs=None):
     h = ((lambda1 * gamma1 * pow(t, gamma1-1) * p * np.exp(-1 * lambda1 * pow(t, gamma1)) + lambda2 * gamma2 * pow(t, gamma2-1) * (1 - p)* np.exp(-1 * lambda2 * pow(t, gamma2)))
          / (p * np.exp(-1 * lambda1 * pow(t, gamma1)) + (1 - p) * np.exp(-1 * lambda2 * pow(t, gamma2)) ))
-    if X and beta:
+    if X:
         ## proportional hazards
-        h = h * np.exp(X*beta)
+        h = h * _make_sim_rate(df=X, form=form, coefs=coefs)
     return h
 
 def _sim_mixture_weibull_S2(t,
                            stepsize=0.01,
                            **kwargs):
+    '''
+    Simulate data for complex hazards, as mixture of weibull distributions.
+
+    Returns Survival at time t, given parameter values. Uses approximate method of determining S, as cumulative sum of hazards computed stepwise.
+
+    Based on:
+    ## The use of restricted cubic splines to approximate complex hazard functions in the analysis of time-to-event data: a simulation study
+    ## Mark J. Rutherford, Michael J. Crowther & Paul C. Lambert Journal of Statistical Computation and Simulation Vol. 85 , Iss. 4, 2015
+
+    '''
     h = _sim_mixture_weibull_h(t=np.arange(start=stepsize, stop=t, step=stepsize), **kwargs)
     return np.exp( -1 * sum(h * stepsize))
+
+def sim_mixture_weibull(N, lambda1, gamma1, lambda2, gamma2, p, form, rate, coefs, censor_time, **kwargs):
+    sample_data = sim_covariate_data(N=N, censor_time=censor_time, **kwargs)
 
 ## -- simulate data for joint models
 
