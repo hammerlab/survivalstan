@@ -27,6 +27,8 @@ def fit_stan_survival_model(df=None,
                             group_col=None,
                             timepoint_id_col=None,
                             timepoint_end_col=None,
+                            strata_id_col=None,
+                            strata_col=None,
                             make_inits=None,
                             stan_data=dict(),
                             grp_coef_type=None,
@@ -125,6 +127,8 @@ def fit_stan_survival_model(df=None,
                                       sample_col=sample_col,
                                       group_id_col=group_id_col,
                                       group_col=group_col,
+                                      strata_id_col=strata_id_col,
+                                      strata_col=strata_col,
                                       timepoint_id_col=timepoint_id_col,
                                       timepoint_end_col=timepoint_end_col,
                                       drop_intercept=drop_intercept,
@@ -206,6 +210,8 @@ def fit_stan_survival_model(df=None,
         'sample_id_col': input_data.sample_id_col,
         'timepoint_id_col': input_data.timepoint_id_col,
         'timepoint_end_col': input_data.timepoint_end_col,
+        #'strata_id_col': input_data.strata_id_col,
+        #'strata_col': input_data.strata_col,
     }
 
 class SurvivalStanData:
@@ -216,6 +222,7 @@ class SurvivalStanData:
                  time_col=None,
                  sample_id_col=None, sample_col=None,
                  group_id_col=None, group_col=None,
+                 strata_id_col=None, strata_col=None,
                  timepoint_id_col=None, timepoint_end_col=None,
                  drop_intercept=True,
                  **kwargs):
@@ -231,6 +238,8 @@ class SurvivalStanData:
         self.group_id_col = group_id_col
         self.timepoint_id_col = timepoint_id_col
         self.drop_intercept = drop_intercept
+        self.strata_id_col = strata_id_col
+        self.strata_col = strata_col
         ## prepare data
         self.prep_survival_formula()
         self.prep_design_info()
@@ -252,6 +261,7 @@ class SurvivalStanData:
                                                  event_col=self.event_col,
                                                  group_col=self.group_col,
                                                  sample_col=self.sample_col,
+                                                 strata_col=self.strata_col,
                                                  timepoint_end_col=self.timepoint_end_col,
                                                  time_col=self.time_col)
 
@@ -269,6 +279,8 @@ class SurvivalStanData:
                 self.sample_col = args['subject']
             if 'group' in args.keys():
                 self.group_col = args['group']
+            if 'strata' in args.keys():
+                self.strata_col = args['strata']
             if surv_factor._type == 'long':
                 if 'time' in args.keys():
                     self.timepoint_end_col = args['time']
@@ -299,6 +311,7 @@ class SurvivalStanData:
         # name object decode for user-provided subject, group & timepoint cols
         decode_objects = {'subject_id': self.sample_col,
                           'group_id': self.group_col,
+                          'strata_id': self.strata_col,
                           'timepoint_id': self.timepoint_end_col,
                          }
         mdata = self.y.design_info.terms[0].factors[0]._meta_data
@@ -330,6 +343,9 @@ class SurvivalStanData:
                     self.timepoint_id_col = decode_id_rename
                     self.timepoint_end_col = decode_col # also not necessary
                     self._prep_timepoint_df()
+                if decode == 'strata_id':
+                    self.strata_id_col = decode_id_rename
+                    self.strata_col = decode_col
     
     def prep_stan_data(self, **kwargs):
         ''' Prep data dictionary to pass to stan.fit

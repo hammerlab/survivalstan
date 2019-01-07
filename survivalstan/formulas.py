@@ -114,6 +114,7 @@ class Surv(object):
     def __init__(self):
         self.subject_id = Id('subject')
         self.timepoint_id = Id('timepoint')
+        self.strata_id = Id('strata')
         self.group_id = Id('group')
         self._type = None
         self._grouped = None
@@ -121,7 +122,7 @@ class Surv(object):
 
     def _check_kwargs(self, **kwargs):
         kwargs = dict(**kwargs)
-        allowed_kwargs = ['subject', 'group']
+        allowed_kwargs = ['subject', 'group', 'strata']
         bad_keys = [key not in allowed_kwargs for key in kwargs.keys()]
         if any(bad_keys):
             raise ValueError('Invalid parameter: {}'.format(','.join(bad_keys)))
@@ -140,10 +141,16 @@ class Surv(object):
             self.group_id.memorize_chunk(kwargs['group'])
         else:
             self._grouped = False
+        if 'strata' in kwargs.keys():
+            self._stratified = True
+            self.strata_id.memorize_chunk(kwargs['strata'])
+        else:
+            self._stratified = False
 
     def memorize_finish(self):
         self.subject_id.memorize_finish()
         self.group_id.memorize_finish()
+        self.strata_id.memorize_finish()
         self.timepoint_id.memorize_finish()
 
     def _prep_timepoint_standata(self, timepoint_df):
@@ -159,7 +166,7 @@ class Surv(object):
         return timepoint_input_data
 
     def _prep_long(self, timepoint_id, event_status, subject_id, group_id=None,
-                   stan_data=dict(), meta_data=dict(), **kwargs):
+                   strata_id=None, stan_data=dict(), meta_data=dict(), **kwargs):
         if patsy.util.have_pandas:
             dm = {'timepoint_id': timepoint_id,
                   'event_status': event_status.astype(int),
@@ -167,6 +174,8 @@ class Surv(object):
                   }
             if group_id is not None:
                 dm.update({'group_id': group_id})
+            if strata_id is not None:
+                dm.update({'strata_id': strata_id})
             dm = pd.DataFrame(dm)
             # prep stan_data inputs
             stan_data.update({
@@ -177,6 +186,8 @@ class Surv(object):
                     })
             if group_id is not None:
                 stan_data.update({'g': dm['group_id'].values.astype(int)})
+            if strata_id is not None:
+                stan_data.update({'k': dm['strata_id'].values.astype(int)})
             meta_data.update({'df': dm})
         else:
             raise ValueError('non-pandas use case not supported yet. Please ',
@@ -195,7 +206,7 @@ class Surv(object):
                 stan_data.update({'g': group_id})
         return LongSurvData(dm, stan_data=stan_data, meta_data=meta_data, **kwargs)
 
-    def _prep_wide(self, time, event_status, group_id=None,
+    def _prep_wide(self, time, event_status, group_id=None, strata_id=None,
                    stan_data=dict(), meta_data=dict(), **kwargs):
         if patsy.util.have_pandas:
             # prep pandas dataframe
@@ -204,6 +215,8 @@ class Surv(object):
                  }
             if group_id is not None:
                 dm.update({'group_id': group_id})
+            if strata_id is not None:
+                dm.update({'strata_id': strata_id})
             dm = pd.DataFrame(dm)
             # prep stan_data object
             stan_data.update({'y': dm['time'].values.astype(float),
@@ -211,6 +224,8 @@ class Surv(object):
                               'N': len(dm.index)})
             if group_id is not None:
                 stan_data.update({'g': dm['group_id'].values.astype(int)})
+            if strata_id is not None:
+                stan_data.update({'k': dm['strata_id'].values.astype(int)})
             meta_data.update({'df': dm})
         else:
             raise ValueError('non-pandas usage not yet supported. Please',
@@ -243,15 +258,21 @@ class Surv(object):
             meta_data.update({'group_id': self.group_id.decode_df()})
         else:
             group_id = None
+        if 'strata' in kwargs.keys():
+            strata_id = self.strata_id.transform(kwargs['strata'])
+            stan_data.update({'K': self.strata_id.len()})
+            meta_data.update({'strata_id': self.strata_id.decode_df()})
+        else:
+            strata_id = None
 
         if self._type == 'long':
             return(self._prep_long(timepoint_id=timepoint_id, event_status=event_status,
-                                  subject_id=subject_id, group_id=group_id,
+                                  subject_id=subject_id, group_id=group_id, strata_id=strata_id,
                                   meta_data=meta_data, stan_data=stan_data)
                   )
         elif self._type == 'wide':
             return(self._prep_wide(time=time, event_status=event_status, group_id=group_id,
-                                  meta_data=meta_data, stan_data=stan_data))
+                                   strata_id=strata_id, meta_data=meta_data, stan_data=stan_data))
 
 surv = patsy.stateful_transform(Surv)
 
@@ -345,7 +366,7 @@ def formula_uses_surv(formula, df):
     else:
         return False
 
-def gen_lhs_formula(event_col, time_col=None, group_col=None,
+def gen_lhs_formula(event_col, time_col=None, group_col=None, strata_col=None,
                    sample_col=None, timepoint_end_col=None):
     ''' Construct LHS of formula_like str using `surv` syntax  
 
@@ -358,6 +379,8 @@ def gen_lhs_formula(event_col, time_col=None, group_col=None,
                 (optional) name of column containing group identifiers, if applicable
             sample_col (str):
                 (optional) name of column containing sample or subject identifiers, if applicable
+            strata_col (str):
+                (optional) name of column containing strata identifiers, if applicable
             timepoint_end_col (str):
                 (optional) name of column containing timepoint end value, if applicable
 
@@ -376,6 +399,8 @@ def gen_lhs_formula(event_col, time_col=None, group_col=None,
     # subject column
     if sample_col:
         pars.update({'subject': sample_col})
+    if strata_col:
+        pars.update({'strata': strata_col})
     # timepoint end col
     if timepoint_end_col:
         pars.update({'time': timepoint_end_col})
@@ -383,7 +408,7 @@ def gen_lhs_formula(event_col, time_col=None, group_col=None,
                                     value in pars.items()]))
     return(lhs_formula)
 
-def gen_surv_formula(rhs_formula, event_col, time_col=None,
+def gen_surv_formula(rhs_formula, event_col, time_col=None, strata_col=None,
                       group_col=None, sample_col=None, timepoint_end_col=None):
     ''' Construct formula_like str using `surv` syntax  
 
@@ -398,6 +423,8 @@ def gen_surv_formula(rhs_formula, event_col, time_col=None,
                 (optional) name of column containing group identifiers, if applicable
             sample_col (str):
                 (optional) name of column containing sample or subject identifiers, if applicable
+            strata_col (str):
+                (optional) name of column containing strata identifiers, if applicable
             timepoint_end_col (str):
                 (optional) name of column containing timepoint end value, if applicable
 
@@ -407,7 +434,7 @@ def gen_surv_formula(rhs_formula, event_col, time_col=None,
         Comments:
             Is used by SurvivalStanData class to provide backwards compatibility with surv syntax
     '''
-    lhs_formula = gen_lhs_formula(event_col=event_col, time_col=time_col,
+    lhs_formula = gen_lhs_formula(event_col=event_col, time_col=time_col, strata_col=strata_col,
                                   group_col=group_col, sample_col=sample_col,
                                   timepoint_end_col=timepoint_end_col)
     return('~'.join([lhs_formula.strip(), rhs_formula.strip()]))

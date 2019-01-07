@@ -152,8 +152,8 @@ def _sim_mixture_weibull_S2(t,
     h = _sim_mixture_weibull_h(t=np.arange(start=stepsize, stop=t, step=stepsize), **kwargs)
     return np.exp( -1 * sum(h * stepsize))
 
-def sim_mixture_weibull(N, lambda1, gamma1, lambda2, gamma2, p, form, rate, coefs, censor_time, **kwargs):
-    sample_data = sim_covariate_data(N=N, censor_time=censor_time, **kwargs)
+#def sim_mixture_weibull(N, lambda1, gamma1, lambda2, gamma2, p, form, rate, coefs, censor_time, **kwargs):
+#    sample_data = sim_covariate_data(N=N, censor_time=censor_time, **kwargs)
 
 ## -- simulate data for joint models
 
