@@ -432,6 +432,7 @@ def _prep_pp_data_single_model(model, time_element='y_hat_time',
     pp_data = pd.merge(pp_event_time, pp_event_status,
                        on=['iter', sample_col, 'model_cohort'])
     if join_with:
+            pp_data[sample_col] = pp_data[sample_col].astype(model[join_with][sample_col].dtype)
             pp_data = pd.merge(pp_data, model[join_with], on=sample_col,
                                suffixes=['', '_original'])
     return pp_data
