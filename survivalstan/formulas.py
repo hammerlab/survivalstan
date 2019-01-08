@@ -1,3 +1,5 @@
+import warnings
+warnings.simplefilter(action='ignore', category=UserWarning)
 import pandas as pd
 import patsy
 import numpy as np
@@ -278,7 +280,13 @@ def _get_args(s):
     pattern = r'(\w[\w\d_]*)\((.*)\)$'
     match = re.match(pattern, s)
     if match and len(match.groups()) == 2:
-        return dict(re.findall(r'(\S+)=(".*?"|[^ ,]+)', match.groups()[1]))
+        d = dict(re.findall(r'(\S+)\s*=\s*(".*?"|[^ ,]+)', match.groups()[1]))
+        for name, value in d.items():
+            try:
+                d[name] = int(value)
+            except:
+                d[name] = value.strip('\"').strip('\'')
+        return(d)
     else:
         raise ValueError('function string {} could not be parsed'.format(s))
 
