@@ -1,6 +1,6 @@
 
-import matplotlib as mpl
-mpl.use('Agg')
+from matplotlib import pyplot as plt
+plt.switch_backend('Agg')
 import survivalstan
 from stancache import stancache
 import numpy as np
