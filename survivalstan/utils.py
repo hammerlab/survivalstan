@@ -106,7 +106,9 @@ def _extract_time_betas_single_model(stanmodel, element='beta_time', coefs=None,
     time_data = list()
     for i in plot_coefs:
         tb_df = pd.DataFrame(time_betas[:,i,:])
-        tb_df = pd.melt(tb_df, var_name=timepoint_id_col, value_name=value_name)
+        tb_df.reset_index(inplace=True)
+        tb_df.rename(columns = {'index': 'iter'}, inplace=True)
+        tb_df = pd.melt(tb_df, var_name=timepoint_id_col, value_name=value_name, id_vars='iter')
         tb_df['coef'] = coef_names[i]
         time_data.append(tb_df)
     time_data = pd.concat(time_data)
