@@ -1,5 +1,5 @@
-from survivalstan.formulas import *
 import survivalstan
+from survivalstan.formulas import *
 from nose.tools import ok_, eq_
 from numpy import array_equal
 
@@ -21,7 +21,9 @@ def get_alt_test_data():
 def test_get_args():
     ''' test that get_args correctly parses args
     '''
-    res = _get_args('function_name(arg1=1, arg2="2")')
+    res = survivalstan.formulas._get_args('function_name(arg1=1, arg2="2")')
+    eq_(res, {'arg1': 1, 'arg2': '2'})
+    res = survivalstan.formulas._get_args('function_name(arg1=1, arg2 = "2")')
     eq_(res, {'arg1': 1, 'arg2': '2'})
 
 def test_as_id_str():
@@ -88,7 +90,7 @@ def test_surv_df(df=get_test_data()):
     res = surv(time=df['time'], event_status=df['event_value'])
     eq_(res.shape[1], 2)
     eq_(res.shape[0], len(df.index))
-    ok_(array_equal(res.columns, ['event_status', 'time']))
+    ok_(array_equal(set(res.columns), set(['time', 'event_status'])))  # order doesn't matter
     eq_(np.sum(res['event_status']), np.sum(df['event_value']))
 
 def test_surv_df_with_bool():
@@ -104,8 +106,7 @@ def test_surv_df_subject():
                subject=df['subject_id'])
     eq_(res.shape[1], 3)
     eq_(res.shape[0], len(df.index))
-    ok_(array_equal(res.columns, ['event_status', 'subject_id',
-                                  'timepoint_id']))
+    ok_(array_equal(set(res.columns), set(['timepoint_id', 'event_status', 'subject_id'])))  # order doesn't matter
     check_valid_id(res['subject_id'], ref=df['subject_id'])
     check_valid_id(res['timepoint_id'], ref=df['time'])
     eq_(np.sum(res['event_status']), np.sum(df['event_value']))
@@ -129,9 +130,13 @@ def test_surv_df_subject_formula(df=get_test_data()):
     # test quality of res
     eq_(res.shape[1], 3)
     eq_(res.shape[0], len(df.index))
-    check_valid_id(res[1], ref=df['subject_id'])
-    check_valid_id(res[2], ref=df['time'])
-    eq_(np.sum(res[0]), np.sum(df['event_value']))
+    # results should be:
+    #  0: timeepoint_id
+    #  1: event_status
+    #  2: subject_id
+    check_valid_id(res[0], ref=df['time'])
+    eq_(np.sum(res[1]), np.sum(df['event_value']))
+    check_valid_id(res[2], ref=df['subject_id'])
     # test whether class ids are retained when predicting new data
     (y.new, X.new) = patsy.build_design_matrices([y.design_info,
                                                    X.design_info], df.tail(n=50))

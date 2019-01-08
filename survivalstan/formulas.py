@@ -207,8 +207,8 @@ class Surv(object):
                              ' import pandas library to use `surv` syntax')
 
         # prep pandas dataframe
-        dm = {'time': time,
-              'event_status': event_status.astype(int),
+        dm = {'event_status': event_status.astype(int),
+              'time': time,
               }
         if group_id is not None:
             dm.update({'group_id': group_id})
