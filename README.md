@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/hammerlab/survivalstan.svg?branch=setup-travis)](https://travis-ci.org/hammerlab/survivalstan) 
+[![Build Status](https://travis-ci.org/hammerlab/survivalstan.svg?branch=master)](https://travis-ci.org/hammerlab/survivalstan) 
 [![Coverage Status](https://img.shields.io/coveralls/hammerlab/survivalstan.svg)](https://coveralls.io/github/hammerlab/survivalstan?branch=master)
 [![PyPI version](https://img.shields.io/pypi/v/survivalstan.svg)](https://pypi.python.org/pypi/survivalstan)
 
