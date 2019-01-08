@@ -49,7 +49,7 @@ transformed data {
   vector[T] log_t_dur;
   int n_trans[S, T];  
 
-  log_t_dur = log(t_obs);
+  log_t_dur = log(t_dur);
   
   // n_trans used to map each sample*timepoint to n (used in gen quantities)
   // map each patient/timepoint combination to n values
