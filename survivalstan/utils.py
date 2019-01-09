@@ -142,6 +142,9 @@ def _extract_time_betas_single_model(stanmodel,
     timepoint_data = (stanmodel['df']
                       .loc[:, [timepoint_id_col, timepoint_end_col]]
                       .drop_duplicates())
+    # coerce timepoint_id_col to int64 in both datasets
+    time_data[timepoint_id_col] = time_data[timepoint_id_col].astype('int64')
+    timepoint_data[timepoint_id_col] = timepoint_data[timepoint_id_col].astype('int64')
     time_data = pd.merge(time_data, timepoint_data, on=timepoint_id_col)
     time_data['exp({})'.format(value_name)] = np.exp(time_data[value_name])
     time_data['model_cohort'] = stanmodel['model_cohort']
