@@ -14,8 +14,8 @@ functions {
     int count_value(vector a, real val) {
         int s;
         s = 0;
-        for (i in 1:num_elements(a)) 
-            if (a[i] == val) 
+        for (i in 1:num_elements(a))
+            if (a[i] == val)
                 s = s + 1;
         return s;
     }
@@ -40,7 +40,6 @@ functions {
             i_cens = i_cens+1;
         }
     }
-    print(idx_obs);
     log_lik[1] = gamma_lpdf(t[idx_obs] | shape, rate[idx_obs]);
     log_lik[2] = gamma_lccdf(t[idx_cens] | shape, rate[idx_cens]);
     prob = sum(log_lik);
@@ -101,7 +100,7 @@ def test_model(**kwargs):
     ok_('coefs' in testfit)
     survivalstan.utils.plot_coefs([testfit])
     survivalstan.utils.plot_coefs([testfit], trans=np.exp)
-    return(testfit) 
+    return(testfit)
 
 
 def test_null_model(**kwargs):
@@ -128,4 +127,3 @@ def test_null_model(**kwargs):
     survivalstan.utils.plot_coefs([testfit])
     survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit)
-
