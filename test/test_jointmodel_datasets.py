@@ -1,3 +1,5 @@
+from matplotlib import pyplot as plt
+plt.switch_backend('Agg')
 import statsmodels
 import survivalstan
 import random
