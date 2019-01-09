@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 plt.switch_backend('Agg')
+import survivalstan
 from stancache import stancache
 import numpy as np
 from nose.tools import ok_
