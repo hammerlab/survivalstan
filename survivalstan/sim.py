@@ -242,7 +242,7 @@ def _sim_jointmodel_longitudinal_biomarker(N, meas_gap, t_df, X_l, b,
         time = row['biomarker_time']
         X_x = np.matrix([1, time, X_l[index, 0]])
         b_x = b[index, :]
-        x_x = np.matrix([1, time]).transpose()
+        x_x = np.matrix([1, time]).transpose()  # pylint: disable=E1111
         epsilon = meas_error()
         value = X_x*B_l + b_x*x_x + epsilon
         if len(value) != 1:
