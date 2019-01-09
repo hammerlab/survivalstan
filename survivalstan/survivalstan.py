@@ -651,7 +651,7 @@ def prep_data_long_surv(df, time_col, event_col, sample_col=None,
                             ]
                            ].drop_duplicates().copy()
         assert(all(df_covars.duplicated(subset=[sample_col, time_col])
-                   is False))
+                   == False))
         df_multi = pd.merge(df_events, df_covars, on=[sample_col, time_col],
                             how='outer')
     else:
@@ -666,7 +666,7 @@ def prep_data_long_surv(df, time_col, event_col, sample_col=None,
                                   if column not in event_cols
                                   and column not in time_col]].copy()
         df_covars.drop_duplicates(inplace=True)
-        assert(all(df_covars.duplicated(subset=[sample_col]) is False))
+        assert(all(df_covars.duplicated(subset=[sample_col]) == False))
         # merge in event-data for each event type
         ldf = None
         for event in event_cols:
