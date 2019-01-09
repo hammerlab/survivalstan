@@ -365,7 +365,7 @@ class SurvivalStanData:
         # RHS stan_data from x_df
         # use x_df for now to handle drop_intercept correctly
         self.data.update({
-            'x': self.x_df.as_matrix(),
+            'x': self.x_df.values,
             'M': self.x_df.shape[1]
         })
         if dict(**kwargs):
