@@ -187,6 +187,12 @@ class Surv(object):
         if group_id is not None:
             dm.update({'group_id': group_id})
         dm = pd.DataFrame(dm)
+        # make sure data.frame columns always ordered alphabetically
+        # so:
+        # 0. event_status
+        # 1. subject_id
+        # 2. timepoint_id
+        dm.sort_index(axis=1, inplace=True)
         # prep stan_data inputs
         stan_data.update({
                 'event': dm['event_status'].values.astype(int),

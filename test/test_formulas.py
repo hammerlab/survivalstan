@@ -131,11 +131,11 @@ def test_surv_df_subject_formula(df=get_test_data()):
     eq_(res.shape[1], 3)
     eq_(res.shape[0], len(df.index))
     # results should be:
-    #  0: timeepoint_id
-    #  1: event_status
+    #  0: event_status
+    #  1. timeepoint_id
     #  2: subject_id
-    check_valid_id(res[0], ref=df['time'])
-    eq_(np.sum(res[1]), np.sum(df['event_value']))
+    eq_(np.sum(res[0]), np.sum(df['event_value']))
+    check_valid_id(res[1], ref=df['time'])
     check_valid_id(res[2], ref=df['subject_id'])
     # test whether class ids are retained when predicting new data
     (y.new, X.new) = patsy.build_design_matrices([y.design_info,
