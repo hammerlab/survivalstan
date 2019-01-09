@@ -1,10 +1,11 @@
 import warnings
-warnings.simplefilter(action='ignore', category=UserWarning)
 import pandas as pd
 import patsy
 import numpy as np
 import re
 import logging
+
+warnings.simplefilter(action='ignore', category=UserWarning)
 logger = logging.getLogger(__name__)
 
 

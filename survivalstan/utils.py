@@ -18,7 +18,7 @@ def _summarize_survival(df, time_col, event_col, evaluate_at=None):
     # prepare survival table
     table = survival_table_from_events(df[time_col], df[event_col])
     table.reset_index(inplace=True)
-    ## normalize survival as fraction of initial_n
+    # normalize survival as fraction of initial_n
     table['initial_n'] = max(table.at_risk)
     table['survival'] = table.apply(lambda row:
                                     row['at_risk'] / row['initial_n'],
@@ -31,7 +31,7 @@ def _summarize_survival(df, time_col, event_col, evaluate_at=None):
         table['keep'] = table['event_at'].apply(lambda x: x in evaluate_at)
     else:
         table['keep'] = True
-    table = table.loc[table['keep'] == True, ['event_at', 'survival']]
+    table = table.loc[table['keep'] == True, ['event_at', 'survival']]  # noqa: E712, E501
     table.rename(columns={'event_at': time_col}, inplace=True)
     return table
 
@@ -129,9 +129,9 @@ def _extract_time_betas_single_model(stanmodel,
     # extract time-betas for each coef
     time_data = list()
     for i in plot_coefs:
-        tb_df = pd.DataFrame(time_betas[: ,i , :])
+        tb_df = pd.DataFrame(time_betas[:, i, :])
         tb_df.reset_index(inplace=True)
-        tb_df.rename(columns = {'index': 'iter'}, inplace=True)
+        tb_df.rename(columns={'index': 'iter'}, inplace=True)
         tb_df = pd.melt(tb_df,
                         var_name=timepoint_id_col,
                         value_name=value_name,
@@ -144,7 +144,8 @@ def _extract_time_betas_single_model(stanmodel,
                       .drop_duplicates())
     # coerce timepoint_id_col to int64 in both datasets
     time_data[timepoint_id_col] = time_data[timepoint_id_col].astype('int64')
-    timepoint_data[timepoint_id_col] = timepoint_data[timepoint_id_col].astype('int64')
+    timepoint_data[timepoint_id_col] = (timepoint_data[timepoint_id_col]
+                                        .astype('int64'))
     time_data = pd.merge(time_data, timepoint_data, on=timepoint_id_col)
     time_data['exp({})'.format(value_name)] = np.exp(time_data[value_name])
     time_data['model_cohort'] = stanmodel['model_cohort']
@@ -438,7 +439,8 @@ def _prep_pp_data_single_model(model, time_element='y_hat_time',
     pp_data = pd.merge(pp_event_time, pp_event_status,
                        on=['iter', sample_col, 'model_cohort'])
     if join_with:
-            pp_data[sample_col] = pp_data[sample_col].astype(model[join_with][sample_col].dtype)
+            pp_data[sample_col] = pp_data[sample_col].astype(
+                                   model[join_with][sample_col].dtype)
             pp_data = pd.merge(pp_data, model[join_with], on=sample_col,
                                suffixes=['', '_original'])
     return pp_data
