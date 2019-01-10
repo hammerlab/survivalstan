@@ -42,7 +42,7 @@ data {
 transformed data {
   vector[T] log_t_dur;  // log-duration for each timepoint
   
-  log_t_dur = log(t_obs);
+  log_t_dur = log(t_dur);
 }
 parameters {
   vector[T] log_baseline_raw; // unstructured baseline hazard for each timepoint t
