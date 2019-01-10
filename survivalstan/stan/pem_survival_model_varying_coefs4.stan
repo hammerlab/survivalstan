@@ -63,7 +63,7 @@ transformed data {
   t_dur[1] <- t_obs[1];
   for (i in 2:T) {
       t_dur[i] <- t_obs[i] - t_obs[i-1];
-      print(t_dur[i]);
+      // print(t_dur[i]);
   }
 }
 parameters {

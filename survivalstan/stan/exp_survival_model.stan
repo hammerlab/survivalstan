@@ -30,7 +30,7 @@ parameters {
   real<lower=0> tau_s_raw;
   vector<lower=0>[M] tau_raw;
   vector[M] beta_raw;
-  real alpha;
+  real<lower=0> alpha;
 }
 transformed parameters {
   vector[M] beta;
