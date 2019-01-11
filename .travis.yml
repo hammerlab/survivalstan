@@ -1,15 +1,14 @@
-sudo: false  # Use container-based infrastructure
+sudo: false
 language: python
 cache:
   pip: true
   directories:
-    - $HOME/.cached_models
+  - "$HOME/.cached_models"
 python:
-  - "2.7"
-  - "3.4"
-  - "3.6"
+- '2.7'
+- '3.4'
 env:
-  - TEST=lint
+  matrix:
   - TEST=test/test_exp_survival_model.py
   - TEST=test/test_exp_survival_model_sim.py
   - TEST=test/test_pem_survival_model.py
@@ -26,53 +25,43 @@ env:
   - TEST=test/test_formulas.py
   - TEST=test/test_SurvivalStanData.py
 before_install:
-  # Commands below copied from: http://conda.pydata.org/docs/travis.html
-  # We do this conditionally because it saves us some downloading if the
-  # version is the same.
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-      wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-    else
-      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-    fi
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  # reset the shell's lookup table for program name to path mappings
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  # Useful for debugging any issues with conda
-  - conda info -a
-  # borrow following from http://github.com/stan-dev/rstan
-  - echo -e "#\x21/bin/bash\n\$@ > wait4.out 2>&1 3>&1 &\nPROCESS=\"\$!\"\nfunction finish {\ncat wait4.out\n}\ntrap finish EXIT\nwhile :\ndo\n  RESULT=\`ps -p \${PROCESS} -o comm=\`" > wait4.sh
-  - echo -e "  if [ -z \"\${RESULT}\" ]; then\n    wait \${PROCESS}; exit \$?\n  else\n    echo \"-\"; sleep 10\n  fi\ndone\nexit \$?" >> wait4.sh
-  - more wait4.sh
-  - chmod 755 wait4.sh
+- if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
+  -O miniconda.sh; else wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+  -O miniconda.sh; fi
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- hash -r
+- conda config --set always_yes yes --set changeps1 no
+- conda update -q conda
+- conda info -a
+- echo -e "#\x21/bin/bash\n\$@ > wait4.out 2>&1 3>&1 &\nPROCESS=\"\$!\"\nfunction
+  finish {\ncat wait4.out\n}\ntrap finish EXIT\nwhile :\ndo\n  RESULT=\`ps -p \${PROCESS}
+  -o comm=\`" > wait4.sh
+- echo -e "  if [ -z \"\${RESULT}\" ]; then\n    wait \${PROCESS}; exit \$?\n  else\n    echo
+  \"-\"; sleep 10\n  fi\ndone\nexit \$?" >> wait4.sh
+- more wait4.sh
+- chmod 755 wait4.sh
 addons:
   apt:
     packages:
-    # install pandoc for use with pypandoc for converting the README
-    # from markdown to RST
     - pandoc
 install:
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy nose pandas matplotlib
-  - source activate test-environment
-  - pip install -r requirements.txt
-  - pip install -r test_requirements.txt
-  - pip install .
-  - pip install coveralls
+- conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy nose
+  pandas matplotlib
+- source activate test-environment
+- pip install -r requirements.txt
+- pip install -r test_requirements.txt
+- pip install .
+- pip install coveralls
 script:
-  - if [[ "$TEST" == "lint" ]]; then
-      ./lint.sh;
-    else
-      ./wait4.sh nosetests $TEST --with-coverage --cover-package=survivalstan;
-    fi
-after_success:
-  coveralls
+- "./lint.sh"
+- "./wait4.sh nosetests $TEST --with-coverage --cover-package=survivalstan"
+after_success: coveralls
 deploy:
- provider: pypi
- user: hammerlab
- password: # See http://docs.travis-ci.com/user/encryption-keys/
-  secure: "weztV3HeMuiBShFxRrFS8IMWh/Yu+wjN8IrCT4IyB3I1GU5n3HIqKji0+M1/VWTEGhwVqPZw9yY0zQle9MYZRp4/QLQh8qLOEs3GvM4xWe3wEzJIm0nAWbyYd1dK1O3dzdyXRFenlw9NDFzgYQDrxnM/z9f4C/v2KanWkLJxoOhejyRnuyQnNlzUSAUyP0AS3TkhD3BwK0NVeW3oynrdsKjsQpfJDk1lqRzhUEXe+m6/g6qN1uFFYvLYtpxFGxNubxzduMDPa2RR9GZtlMkwQIgEsY6DBem/85Uhel2tjm59MJjxp5K3cGtF/IzQIUBEe0WlK2LpbKlLGkZZ7thMGO2XeivrPYrmuD3isUmYFDTwvjp4MnbOS4m44ZrNZzTgwP7Icz7t6M4+NWdSNv274K0lh3Ag2mIvUVA8NYhFWCj31fWqEPd8kk/ADta/+Pi6vWDTFK2dZllw2tZtnnkFVmfkm+PteGyHUGmh0lO9zAtzjd05YycFM3ipjNFQChBMwZN75MXptnBDM8Tg8LuckxNfZ7wmBALJ3JndZqKbHZqi67vGZ2KabmODozHdyZLh7o6YRLuXx5M8u6TUBEadpFHuA8KmQHl2rnFJmVDbg7hPoDiJ4yLKB1EgrWIEDAhokHkXY44LZL40qbZ+X/28D3YGOSr4NRRUdLXTuK2fPCQ="
- on:
-   branch: master
-   tags: True
+  provider: pypi
+  user: jackinovik
+  password:
+    secure: bsV2HqaxnHV4TWRRGBQooBuHSXlqZucnHPWDL5dBLrZ18/Jc2eXcDzVfy7lWyOY/yKdkHhQgQGtZPgNUMKxSudmz+QQOyiIfWylPh/pyJ0XNo8CSNpMniB437LfEF3pvUR2AvJOUcdQwPXfWUWmeR3qe5rFfMBYNrGtNdK2FqsRkJTzgRG1yC4yiO5dnR5LunS8Tr61XGgMQCBSVxz/rDdu7/fb7Vs8kPOkatm0rvKGKBxw9kufbXbW4CIIe9nIY12snAnil1PiE9/YYYa64QJhAiLAPuFxnZbby1FPHDPoaU7AzwgCl2vzKI1FY5D54UdDuVwTwgTRHEhIIZdIHiMnejUgzK19Ta17kRu+IxA/BUJRSGxTJV9x+SZPFDPZ9YZcFh8CMSTxpXIMg3TO2A5foMLbBlTFyBxyj3Bb7D9uzCk/GqwFnzi7GH77HS69CC/umexdbsIpEI1FVKDNVHy+bOos1NjFoVBM3+oSxEbppc6sc1g3a5O3GGQPW8ceHlA3soJfaFWnTUOgubncl8DNzzicLMAL1wENkb9YnkI8A+mxVnH0vY1ZoDkXMBBDZl/NqN6IfgPt37ZvXKV7nun+TtlzTQ82byQbBsrO5kBTEnyAzSsqAmAnRK5hsh2j6wtxkb99gxoT+8pYZXuwMkEajrHFG3T+Q+HzzrbXn4Ps=
+  on:
+    branch: master
+    tags: true
