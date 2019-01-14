@@ -29,8 +29,7 @@ data {
     int<lower=1> N;                                                 // number of obs
     int<lower=1> D;                                                 // number of basis splines
     int<lower=1> M;                                                 // number of covariates
-    matrix[N, M] q;                                                 // Q-transf. of design matrix
-    matrix[M, M] r;
+    matrix[N, M] x;                                                 // covariate design matrix
     vector[N] y;                                                    // log(t)
     int<lower=0, upper=1> event[N];                                 // 1: survival_event, 0: censor
     matrix[N, D] basis_evals;
@@ -39,11 +38,11 @@ data {
 transformed data {
     vector[N] log_y = log(y);
     int<lower=0> N_censored = N - sum(event);                    // number of uncensored data points
-    int<lower=0> N_uncensored = sum(event);                          // number of censored data points
+    int<lower=0> N_uncensored = sum(event);                      // number of censored data points
     int<lower=1, upper=N> id_cens[N_censored] = get_ids_where(event, 0);              // ids where surv_status == 0
     int<lower=1, upper=N> id_uncens[N_uncensored] = get_ids_where(event, 1);          // ids where surv_status == 1
-    matrix[N_censored, M] q_censored = q[id_cens, ];                                       // Q-transf. of design matrix (censored)
-    matrix[N_uncensored, M] q_uncensored = q[id_uncens, ];                                 // Q-transf. of design matrix (uncensored)
+    matrix[N_censored, M] x_censored = x[id_cens, ];                                       // design matrix (censored)
+    matrix[N_uncensored, M] x_uncensored = x[id_uncens, ];                                 // design matrix (uncensored)
     vector[N_censored] log_y_censored = log_y[id_cens];                            // x=log(t) in the paper (censored)
     vector[N_uncensored] log_y_uncensored = log_y[id_uncens];                      // x=log(t) in the paper (uncensored)
     matrix[N_censored, D] basis_evals_censored = basis_evals[id_cens, ];                   // ispline basis matrix (censored)
@@ -53,13 +52,9 @@ transformed data {
 /************************************************************************************************************************/
 parameters {
     vector<lower=0>[D] gammas;                                      // regression coefficients for splines
-    vector[M] beta_tr;                                              // regression coefficients for covariates
+    vector[M] beta;                                            // regression coefficients for covariates
     real gamma_intercept;                                           // \gamma_0 in the paper
     real<lower=0> gamma1;
-}
-/************************************************************************************************************************/
-transformed parameters {
-    vector[M] beta = r \ beta_tr;
 }
 /************************************************************************************************************************/
 model {
@@ -70,8 +65,8 @@ model {
     beta ~ normal(0,1);
     gamma_intercept ~ normal(0,5);
     
-    etas_censored = q_censored*beta_tr + basis_evals_censored*gammas  + gamma_intercept + gamma1*log_y_censored;
-    etas_uncensored = q_uncensored*beta_tr + basis_evals_uncensored*gammas  + gamma_intercept + gamma1*log_y_uncensored;
+    etas_censored = x_censored*beta + basis_evals_censored*gammas  + gamma_intercept + gamma1*log_y_censored;
+    etas_uncensored = x_uncensored*beta + basis_evals_uncensored*gammas  + gamma_intercept + gamma1*log_y_uncensored;
     
     target += -exp(etas_censored);
     target += etas_uncensored - exp(etas_uncensored) - log_y_uncensored + log(deriv_basis_evals_uncensored*gammas + gamma1);
