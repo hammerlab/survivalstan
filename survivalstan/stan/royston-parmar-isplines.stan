@@ -1,13 +1,35 @@
 /***********************************************************************************************************************/
 /* 
  * Adapted from https://github.com/ermeel86/paramaetricsurvivalmodelsinstan/blob/master/royston_parmar_3_qr.stan
- * Written by Eren M. Elci
+ * by Eren M. Elci
  */
+functions {
+    int count_values(int[] x, int val) {
+        int n = 0;
+        for (i in 1:num_elements(x)) 
+            if (x[i] == val) 
+                n = n + 1;
+        return n;
+    }
+
+    int[] get_ids_where(int[] status, int value) {
+        int N = num_elements(status);
+        int ids[count_values(status, value)]; 
+        int loc = 1;
+        for (i in 1:N) {
+            if (status[i] == value) {
+                ids[loc] = i;
+                loc = loc + 1;
+            }
+        }
+        return ids;
+    }
+}
 data {
-    int<lower=1> N;
+    int<lower=1> N;                                                 // number of obs
     int<lower=1> S;                                                 // number of basis splines
     int<lower=1> M;                                                 // number of covariates
-    matrix[N, M] Q;                                                // Q-transf. of design matrix
+    matrix[N, M] Q;                                                 // Q-transf. of design matrix
     matrix[M, M] R;
     vector[N] log_times;                                            // x=log(t)
     int<lower=0, upper=1> surv_status[N];                           // 1: survival_event, 0: censor
@@ -15,41 +37,17 @@ data {
     matrix[N, S] deriv_basis_evals;
 }
 transformed data {
-    int<lower=0> N_uncensored = N - sum(status);                    // number of uncensored data points
-    int<lower=0> N_censored = sum(status);                          // number of censored data points
-    int<lower=1, upper=N> id_cens[N_censored];
-    int<lower=1, upper=N> id_uncens[N_uncensored];
-    matrix[N_censored, M] Q_censored;                               // Q-transf. of design matrix (censored)
-    matrix[N_uncensored, M] Q_uncensored;                           // Q-transf. of design matrix (uncensored)
-    vector[N_censored] log_times_censored;                          // x=log(t) in the paper (censored)
-    vector[N_uncensored] log_times_uncensored;                      // x=log(t) in the paper (uncensored)
-    matrix[N_censored, S] basis_evals_censored;                      // ispline basis matrix (censored)
-    matrix[N_uncensored, S] basis_evals_uncensored;                  // ispline basis matrix (uncensored)
-    matrix[N_uncensored, S] deriv_basis_evals_uncensored;            // derivatives of isplines matrix (uncensored)
-    
-    // get ids for censored & uncensored obs
-    {
-        int loc_unc = 1;  // location within uncensored id-vector
-        int loc_cens = 1; // location within censored id-vector
-        for (i in 1:N) {
-            if (surv_status[i] == 1) {
-                id_uncens[loc_unc] = i;
-                loc_unc = loc_unc + 1;
-            } else if (surv_status[i] == 0) {
-                id_cens[loc_cens] = i;
-                loc_cens = loc_cens + 1;
-            }
-        }
-    }
-    
-    // populate censored & uncensored objects using indices
-    Q_censored = Q[id_cens, ];
-    Q_uncensored = Q[id_uncens, ];
-    log_times_censored = log_times[id_cens];
-    log_times_uncensored = log_times[id_uncens];
-    basis_evals_uncensored = basis_evals[id_uncens, ];
-    basis_evals_censored = basis_evals[id_cens, ];
-    deriv_basis_evals_uncensored = deriv_basis_evals[id_uncens, ];
+    int<lower=0> N_uncensored = N - sum(surv_status);                    // number of uncensored data points
+    int<lower=0> N_censored = sum(surv_status);                          // number of censored data points
+    int<lower=1, upper=N> id_cens[N_censored] = get_ids_where(surv_status, 0);              // ids where surv_status == 0
+    int<lower=1, upper=N> id_uncens[N_uncensored] = get_ids_where(surv_status, 1);          // ids where surv_status == 1
+    matrix[N_censored, M] Q_censored = Q[id_cens, ];                                       // Q-transf. of design matrix (censored)
+    matrix[N_uncensored, M] Q_uncensored = Q[id_uncens, ];                                 // Q-transf. of design matrix (uncensored)
+    vector[N_censored] log_times_censored = log_times[id_cens];                            // x=log(t) in the paper (censored)
+    vector[N_uncensored] log_times_uncensored = log_times[id_uncens];                      // x=log(t) in the paper (uncensored)
+    matrix[N_censored, S] basis_evals_censored = basis_evals[id_cens, ];                   // ispline basis matrix (censored)
+    matrix[N_uncensored, S] basis_evals_uncensored = basis_evals[id_uncens, ];             // ispline basis matrix (uncensored)
+    matrix[N_uncensored, S] deriv_basis_evals_uncensored = deriv_basis_evals[id_uncens,];  // derivatives of isplines matrix (uncensored)
 }
 /************************************************************************************************************************/
 parameters {
