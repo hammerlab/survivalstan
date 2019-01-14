@@ -7,6 +7,9 @@ import logging
 # TODO handle failure to load rpy2 and/or splines2
 from rpy2.robjects import FloatVector
 from rpy2.robjects.packages import importr
+utils = importr('utils')
+utils.chooseCRANmirror(ind=1)
+utils.install_packages('splines2')
 splines2 = importr("splines2")
 
 warnings.simplefilter(action='ignore', category=UserWarning)
