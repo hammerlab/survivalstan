@@ -4,6 +4,10 @@ import patsy
 import numpy as np
 import re
 import logging
+# TODO handle failure to load rpy2 and/or splines2
+from rpy2.robjects import FloatVector
+from rpy2.robjects.packages import importr
+splines2 = importr("splines2")
 
 warnings.simplefilter(action='ignore', category=UserWarning)
 logger = logging.getLogger(__name__)
@@ -76,9 +80,35 @@ class Id(object):
         df.dropna(inplace=True)
         return df
 
+class iSpline(object):
+    def __init__(self, knots = 6, degree = 3):
+        self.knots = knots
+        self.degree = degree
+
+    def memorize_chunk(self, x):
+        self.isOut = splines2.iSpline(FloatVector(np.log(x)),
+                                      knots = self.knots,
+                                      degree = self.degree,
+                                      intercept = True)
+
+    def memorize_finish(self):
+        pass
+
+    def transform(self, x):
+        ispline_basis = splines2.predict_iSpline(self.isOut,
+                                                 newx = FloatVector(np.log(x)))
+        return ispline_basis
+
+    def nbasis(self):
+        return self.isOut.dim[1]
+    
+    @staticmethod
+    def deriv(isOut):
+        return splines2.deriv_iSpline(isOut)
+
 
 as_id = patsy.stateful_transform(Id)
-
+as_ispline = patsy.stateful_transform(iSpline)
 
 class SurvData(pd.DataFrame):
     ''' patsy.DesignMatrix representing survival data output '''
@@ -133,11 +163,13 @@ class Surv(object):
         self.group_id = Id('group')
         self._type = None
         self._grouped = None
+        self.knots = 10
+        self.degree = 3
         pass
 
     def _check_kwargs(self, **kwargs):
         kwargs = dict(**kwargs)
-        allowed_kwargs = ['subject', 'group']
+        allowed_kwargs = ['subject', 'group', 'degree', 'knots']
         bad_keys = [key not in allowed_kwargs for key in kwargs.keys()]
         if any(bad_keys):
             raise ValueError('Invalid parameter: {}'
@@ -157,11 +189,20 @@ class Surv(object):
             self.group_id.memorize_chunk(kwargs['group'])
         else:
             self._grouped = False
+        if 'degree' in kwargs.keys():
+            self.degree = kwargs['degree']
+        if 'knots' in kwargs.keys():
+            self.knots = kwargs['knots']
+        if self._type == 'wide':
+            self.ispline_basis = iSpline(degree = self.degree, knots = self.knots)
+            self.ispline_basis.memorize_chunk(time)
 
     def memorize_finish(self):
         self.subject_id.memorize_finish()
         self.group_id.memorize_finish()
         self.timepoint_id.memorize_finish()
+        if (self._type == 'wide'):
+            self.ispline_basis.memorize_finish()
 
     def _prep_timepoint_standata(self, timepoint_df):
         unique_timepoints = _prep_timepoint_dataframe(
@@ -207,8 +248,9 @@ class Surv(object):
                             stan_data=stan_data,
                             meta_data=meta_data, **kwargs)
 
-    def _prep_wide(self, time, event_status, group_id=None,
-                   stan_data=dict(), meta_data=dict(), **kwargs):
+    def _prep_wide(self, time, event_status, ispline_basis,
+                   group_id=None, stan_data=dict(),
+                   meta_data=dict(), **kwargs):
         if not patsy.util.have_pandas:
             raise ValueError('non-pandas usage not yet supported. Please',
                              ' import pandas library to use `surv` syntax')
@@ -223,10 +265,15 @@ class Surv(object):
         # prep stan_data object
         stan_data.update({'y': dm['time'].values.astype(float),
                           'event': dm['event_status'].values.astype(int),
-                          'N': len(dm.index)})
+                          'N': len(dm.index),
+                          'D': ispline_basis.dim[1],
+                          'basis_evals': np.matrix(ispline_basis),
+                          'deriv_basis_evals': np.matrix(iSpline.deriv(ispline_basis)),
+                           })
         if group_id is not None:
             stan_data.update({'g': dm['group_id'].values.astype(int)})
-        meta_data.update({'df': dm})
+        meta_data.update({'df': dm, 
+                          'ispline_basis': self.ispline_basis})
         return WideSurvData(dm,
                             stan_data=stan_data,
                             meta_data=meta_data,
@@ -251,7 +298,6 @@ class Surv(object):
             meta_data.update({'group_id': self.group_id.decode_df()})
         else:
             group_id = None
-
         if self._type == 'long':
             return(self._prep_long(timepoint_id=timepoint_id,
                                    event_status=event_status,
@@ -261,9 +307,11 @@ class Surv(object):
                                    stan_data=stan_data)
                    )
         elif self._type == 'wide':
+            ispline_basis = self.ispline_basis.transform(time)
             return(self._prep_wide(time=time,
                                    event_status=event_status,
                                    group_id=group_id,
+                                   ispline_basis=ispline_basis,
                                    meta_data=meta_data,
                                    stan_data=stan_data))
 
