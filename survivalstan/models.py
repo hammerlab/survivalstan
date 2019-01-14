@@ -13,6 +13,7 @@ _pem_survival_timevarying_path = joinpth('stan',
                                          'pem_survival_model_tvc.stan')
 _weibull_survival_path = joinpth('stan', 'weibull_survival_model.stan')
 _exp_survival_path = joinpth('stan', 'exp_survival_model.stan')
+_royston_parmar_noqr_path = joinpth('stan', 'royston-parmar-isplines-noqr.stan')
 
 # varying-coefs models
 _weibull_survival_varcoef_path = joinpth(
@@ -35,6 +36,8 @@ weibull_survival_model = pkg_resources.resource_string(
     resource_package, _weibull_survival_path).decode("utf-8")
 exp_survival_model = pkg_resources.resource_string(
     resource_package, _exp_survival_path).decode("utf-8")
+royston_parmar_survival_model = pkg_resources.resource_string(
+    resource_package, _royston_parmar_noqr_path).decode("utf-8")
 
 # varying-coefs models
 pem_survival_model_varying_coefs = pkg_resources.resource_string(
