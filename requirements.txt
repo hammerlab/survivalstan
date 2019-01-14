@@ -13,3 +13,4 @@ pystan>=2.12.0
 lifelines
 versioneer
 numexpr>=2.6.1
+rpy2
