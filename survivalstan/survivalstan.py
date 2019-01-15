@@ -229,6 +229,7 @@ def fit_stan_survival_model(df=None,
         'sample_id_col': input_data.sample_id_col,
         'timepoint_id_col': input_data.timepoint_id_col,
         'timepoint_end_col': input_data.timepoint_end_col,
+        'input_data': input_data,
     }
 
 

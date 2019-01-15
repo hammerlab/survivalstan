@@ -410,6 +410,12 @@ def get_sample_ids(models, sample_col='patient_id'):
     return pd.concat(data)
 
 
+def _prep_pp_data_single_model_royston_parmar(model,
+                                              gamma1_element = 'gamma1', 
+                                              gammas_element = 'gammas',
+                                              beta_element = 'beta') :
+    return Null
+
 def _prep_pp_data_single_model(model, time_element='y_hat_time',
                                event_element='y_hat_event',
                                sample_col=None, time_col='event_time',
