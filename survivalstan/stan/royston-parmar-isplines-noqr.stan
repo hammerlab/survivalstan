@@ -57,17 +57,24 @@ parameters {
     real<lower=0> gamma1;
 }
 /************************************************************************************************************************/
-model {
+transformed parameters {
     vector[N_censored] etas_censored;
     vector[N_uncensored] etas_uncensored;
+    etas_censored = x_censored*beta + basis_evals_censored*gammas  + gamma_intercept + gamma1*log_y_censored;
+    etas_uncensored = x_uncensored*beta + basis_evals_uncensored*gammas  + gamma_intercept + gamma1*log_y_uncensored;
+}
+model {
+    // prior likelihood
     gamma1 ~ normal(1,.2);
     gammas ~ normal(0, 2);
     beta ~ normal(0,1);
     gamma_intercept ~ normal(0,5);
-    
-    etas_censored = x_censored*beta + basis_evals_censored*gammas  + gamma_intercept + gamma1*log_y_censored;
-    etas_uncensored = x_uncensored*beta + basis_evals_uncensored*gammas  + gamma_intercept + gamma1*log_y_uncensored;
-    
+    // data likelihood
     target += -exp(etas_censored);
     target += etas_uncensored - exp(etas_uncensored) - log_y_uncensored + log(deriv_basis_evals_uncensored*gammas + gamma1);
+}
+generated quantities {
+    vector[N] log_lik;
+    log_lik[id_cens] = -exp(etas_censored);
+    log_lik[id_uncens] = etas_uncensored - exp(etas_uncensored) - log_y_uncensored + log(deriv_basis_evals_uncensored*gammas + gamma1);
 }
