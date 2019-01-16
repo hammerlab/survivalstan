@@ -8,9 +8,9 @@ import logging
 from rpy2.robjects import FloatVector
 from rpy2.robjects.packages import importr
 utils = importr('utils')
-utils.chooseCRANmirror(ind=1)
-utils.install_packages('splines2')
-splines2 = importr("splines2")
+utils.chooseCRANmirror(ind=1)  # pylint: disable=no-member
+utils.install_packages('splines2')  # pylint: disable=no-member
+splines2 = importr("splines2")  # pylint: disable=no-member
 
 warnings.simplefilter(action='ignore', category=UserWarning)
 logger = logging.getLogger(__name__)
@@ -89,7 +89,7 @@ class iSpline(object):
         self.degree = degree
 
     def memorize_chunk(self, x):
-        self.isOut = splines2.iSpline(FloatVector(np.log(x)),
+        self.isOut = splines2.iSpline(FloatVector(np.log(x)),  # pylint: disable=no-member
                                       knots = self.knots,
                                       degree = self.degree,
                                       intercept = True)
@@ -98,7 +98,7 @@ class iSpline(object):
         pass
 
     def transform(self, x):
-        ispline_basis = splines2.predict_iSpline(self.isOut,
+        ispline_basis = splines2.predict_iSpline(self.isOut,  # pylint: disable=no-member
                                                  newx = FloatVector(np.log(x)))
         return ispline_basis
 
@@ -107,7 +107,7 @@ class iSpline(object):
     
     @staticmethod
     def deriv(isOut):
-        return splines2.deriv_iSpline(isOut)
+        return splines2.deriv_iSpline(isOut)  # pylint: disable=no-member
 
 
 as_id = patsy.stateful_transform(Id)
