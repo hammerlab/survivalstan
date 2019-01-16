@@ -36,7 +36,6 @@ def test_null_model_sim(**kwargs):
     survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit)
 
-
 def test_model_sim(**kwargs):
     ''' Test survival model on simulated dataset
     '''
@@ -85,6 +84,3 @@ def test_model_sim_with_stancache(**kwargs):
     survivalstan.utils.plot_coefs([testfit])
     survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit)
-
-
-

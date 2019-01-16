@@ -82,7 +82,6 @@ def test_pem_model_with_stancache(**kwargs):
     survivalstan.utils.plot_time_betas(df=first_beta, by=['coef'], y='beta', x='end_time')
     return(testfit) 
 
-
 def test_pem_null_model(force=True, **kwargs):
     ''' Test NULL survival model on flchain dataset
     '''
@@ -116,5 +115,3 @@ def test_pem_null_model(force=True, **kwargs):
     survivalstan.utils.plot_time_betas(models=[testfit], y='exp(beta)', ylim=[0, 4])
     first_beta = survivalstan.utils.extract_time_betas([testfit], coefs=[testfit['x_names'][0]])
     return(testfit)
-
-

@@ -68,7 +68,6 @@ def test_pem_null_model(force=True, **kwargs):
     survivalstan.utils.plot_pp_survival([testfit])
     return(testfit)
 
-
 def test_pem_null_model_with_stancache(force=True, **kwargs):
     ''' Test NULL survival model on flchain dataset
     '''
@@ -97,5 +96,3 @@ def test_pem_null_model_with_stancache(force=True, **kwargs):
     survivalstan.utils.plot_coefs([testfit], element='baseline')
     survivalstan.utils.plot_pp_survival([testfit])
     return(testfit)
-
-

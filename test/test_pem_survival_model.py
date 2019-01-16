@@ -45,7 +45,6 @@ def test_null_pem_model(**kwargs):
     survivalstan.utils.plot_stan_summary([testfit], pars='log_baseline_raw')
     return(testfit)
 
-
 def test_pem_model_with_stancache(**kwargs):
     ''' Test pem survival model
     '''
@@ -75,4 +74,3 @@ def test_pem_model_with_stancache(**kwargs):
     survivalstan.utils.plot_pp_survival([testfit])
     survivalstan.utils.plot_observed_survival(df=d, time_col='t', event_col='event')
     return(testfit)
-

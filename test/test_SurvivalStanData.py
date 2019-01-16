@@ -3,7 +3,6 @@ from .test_formulas import _dict_keys_include
 from nose.tools import ok_, eq_
 import pandas as pd
 
-
 def get_test_data(n=50):
     dataset = survivalstan.sim.sim_data_exp_correlated(N=n,
                                                        censor_time=10)
@@ -47,5 +46,3 @@ def test_basic_SurvivalStanData_with_sample_and_group(df=get_test_data()):
                                         group_col='sex')
     grp_ids = ssdata.get_group_names()
     eq_(len(grp_ids), 2)
-
-

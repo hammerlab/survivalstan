@@ -36,7 +36,6 @@ def test_pem_model_sim():
     survivalstan.utils.plot_coefs([testfit], element='baseline')
     return(testfit)
 
-
 def test_pem_model_sim_with_formula():
     ''' Test pem survival model using `surv` formula syntax
     '''
@@ -103,7 +102,6 @@ def test_pem_model_sim_covar_with_form():
     survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     survivalstan.utils.plot_coefs([testfit], element='baseline')
     return(testfit)
-
 
 def test_pem_model_sim_with_stancache():
     ''' Test weibull survival model on simulated dataset

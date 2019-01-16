@@ -116,5 +116,3 @@ def test_pem_null_model(force=True, **kwargs):
     survivalstan.utils.plot_coefs([testfit], trans=np.exp, element='grp_coefs')
     survivalstan.utils.plot_coefs([testfit], element='baseline')
     return(testfit)
-
-

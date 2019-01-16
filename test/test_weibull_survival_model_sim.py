@@ -83,5 +83,3 @@ def test_model(**kwargs):
     survivalstan.utils.plot_coefs([testfit])
     survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit)
-
-

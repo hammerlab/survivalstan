@@ -60,7 +60,6 @@ def test_model(**kwargs):
     survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit) 
 
-
 def test_null_model(**kwargs):
     ''' Test NULL survival model on flchain dataset
     '''
@@ -84,4 +83,3 @@ def test_null_model(**kwargs):
     survivalstan.utils.plot_coefs([testfit])
     survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit)
-
