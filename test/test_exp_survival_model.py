@@ -27,7 +27,6 @@ def test_model():
         chains = 2,
         seed = 9001,
         make_inits = make_inits,
-        FIT_FUN = stancache.cached_stan_fit,
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
@@ -49,7 +48,6 @@ def test_model_with_formula():
         chains = 2,
         seed = 9001,
         make_inits = make_inits,
-        FIT_FUN = stancache.cached_stan_fit,
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)
@@ -74,7 +72,6 @@ def test_null_model(**kwargs):
         chains = 2,
         seed = 9001,
         make_inits = make_inits,
-        FIT_FUN = stancache.cached_stan_fit,
         )
     ok_('fit' in testfit)
     ok_('coefs' in testfit)

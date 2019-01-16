@@ -11,7 +11,7 @@ from .test_datasets import sim_test_dataset
 model_code = survivalstan.models.weibull_survival_model
 make_inits = survivalstan.make_weibull_survival_model_inits
 
-def test_null_model(**kwargs):
+def test_null_model_with_stancache(**kwargs):
     ''' Test weibull survival model on simulated dataset
     '''
     d = sim_test_dataset()
@@ -36,6 +36,30 @@ def test_null_model(**kwargs):
     survivalstan.utils.plot_coefs([testfit], trans=np.exp)
     return(testfit)
 
+def test_null_model(**kwargs):
+    ''' Test weibull survival model on simulated dataset
+    '''
+    d = sim_test_dataset()
+    testfit = survivalstan.fit_stan_survival_model(
+        model_cohort = 'test model',
+        model_code = model_code,
+        df = d,
+        time_col = 't',
+        event_col = 'event',
+        formula = '~ 1',
+        iter = num_iter,
+        chains = 2,
+        seed = 9001,
+        make_inits = make_inits,
+        **kwargs
+        )
+    ok_('fit' in testfit)
+    ok_('coefs' in testfit)
+    ok_('loo' in testfit)
+    survivalstan.utils.plot_coefs([testfit])
+    survivalstan.utils.plot_coefs([testfit], trans=np.exp)
+    return(testfit)
+
 def test_model(**kwargs):
     ''' Test weibull survival model on simulated dataset
     '''
@@ -51,7 +75,6 @@ def test_model(**kwargs):
         chains = 2,
         seed = 9001,
         make_inits = make_inits,
-        FIT_FUN = stancache.cached_stan_fit,
         **kwargs
         )
     ok_('fit' in testfit)

@@ -12,7 +12,7 @@ model_code = survivalstan.models.pem_survival_model
 make_inits = None
 
 def test_null_pem_model(**kwargs):
-    ''' Test weibull survival model on simulated dataset
+    ''' Test pem survival model
     '''
     d = load_test_dataset(n=20)
     dlong = survivalstan.prep_data_long_surv(df=d, time_col='t', event_col='event')
@@ -28,7 +28,6 @@ def test_null_pem_model(**kwargs):
         chains = 2,
         seed = 9001,
         make_inits = make_inits,
-        FIT_FUN = stancache.cached_stan_fit,
         **kwargs
         )
     ok_('fit' in testfit)
@@ -47,8 +46,8 @@ def test_null_pem_model(**kwargs):
     return(testfit)
 
 
-def test_pem_model(**kwargs):
-    ''' Test weibull survival model on simulated dataset
+def test_pem_model_with_stancache(**kwargs):
+    ''' Test pem survival model
     '''
     d = load_test_dataset(n=20)
     dlong = load_test_dataset_long()
