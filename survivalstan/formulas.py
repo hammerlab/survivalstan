@@ -1,4 +1,5 @@
 import warnings
+warnings.simplefilter(action='ignore', category=UserWarning)
 import pandas as pd
 import patsy
 import numpy as np
