@@ -237,12 +237,13 @@ class SurvivalStanData:
     'Input data representing a survival model in survivalstan'
 
     def __init__(self,
-                 df, formula, event_col=None,
+                 df, formula=None, event_col=None,
                  time_col=None,
                  sample_id_col=None, sample_col=None,
                  group_id_col=None, group_col=None,
                  timepoint_id_col=None, timepoint_end_col=None,
                  drop_intercept=True,
+                 design_infos=[],
                  **kwargs):
         # capture input params
         self.df = df
@@ -256,8 +257,8 @@ class SurvivalStanData:
         self.group_id_col = group_id_col
         self.timepoint_id_col = timepoint_id_col
         self.drop_intercept = drop_intercept
+        self.design_infos = design_infos
         # prepare data
-        self.prep_survival_formula()
         self.prep_design_info()
         self.prep_df_nonmiss()
         self.prep_stan_data(**kwargs)
@@ -285,13 +286,24 @@ class SurvivalStanData:
     def prep_design_info(self):
         ''' Prepare x and y design matrices
         '''
-        (self.y, self.x) = patsy.dmatrices(
-            formula_like=formulas.SurvivalModelDesc(self.surv_formula),
-            data=self.df,
-            )
+        if len(self.design_infos) == 2:
+            (self.y, self.x) = patsy.build_design_matrices(
+                design_infos = self.design_infos, data = self.df)
+        else:
+            self.prep_survival_formula()
+            (self.y, self.x) = patsy.dmatrices(
+                formula_like=formulas.SurvivalModelDesc(self.surv_formula),
+                data=self.df,
+                )
         surv_factor = self.y.design_info.terms[0].factors[0]
+        self.surv_type = surv_factor._type
+        self.surv_formula = surv_factor.code # TODO add rhs_formula
         if surv_factor._is_survival:
             args = surv_factor.code_args
+            if 'time' in args.keys():
+                self.time_col = args['time']
+            if 'event_status' in args.keys():
+                self.event_col = args['event_status']
             if 'subject' in args.keys():
                 self.sample_col = args['subject']
             if 'group' in args.keys():
@@ -299,7 +311,7 @@ class SurvivalStanData:
             if surv_factor._type == 'long':
                 if 'time' in args.keys():
                     self.timepoint_end_col = args['time']
-
+    
     def prep_df_nonmiss(self):
         ''' Create x_df and df_nonmiss
         '''
