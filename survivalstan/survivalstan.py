@@ -298,6 +298,7 @@ class SurvivalStanData:
         surv_factor = self.y.design_info.terms[0].factors[0]
         self.surv_type = surv_factor._type
         self.surv_formula = surv_factor.code # TODO add rhs_formula
+        self.design_infos = [self.y.design_info, self.x.design_info]
         if surv_factor._is_survival:
             args = surv_factor.code_args
             if 'time' in args.keys():
