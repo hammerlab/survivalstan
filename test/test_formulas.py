@@ -91,8 +91,8 @@ def test_surv_df(df=get_test_data()):
     eq_(res.shape[1], 2)
     eq_(res.shape[0], len(df.index))
     eq_(res.stan_data['D'], res.stan_data['basis_evals'].dim[1])
-    ok_(array_equal(res.stan_data['basis_evals'].dim,
-                    res.stan_data['deriv_basis_evals'].dim))
+    ok_(array_equal(res.stan_data['basis_evals'].shape,
+                    res.stan_data['deriv_basis_evals'].shape))
     ok_(array_equal(set(res.columns), set(['time', 'event_status'])))  # order doesn't matter
     eq_(np.sum(res['event_status']), np.sum(df['event_value']))
 
